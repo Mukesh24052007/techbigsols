@@ -1,26 +1,99 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-blue: #004aad;
+  --color-primary: #00357f;
+  --color-primary-container: #004aad;
+  --color-on-primary: #ffffff;
+  --color-action-orange: #f39200;
+  --color-secondary-container: #fc9910;
+  --color-surface-deep: #05142b;
+  --color-surface: #faf8ff;
+  --color-surface-bright: #faf8ff;
+  --color-surface-dim: #d9d9e2;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f3f3fc;
+  --color-surface-container: #ededf6;
+  --color-surface-container-high: #e7e7f0;
+  --color-surface-container-highest: #e2e2eb;
+  --color-surface-variant: #e2e2eb;
+  --color-on-surface: #191b22;
+  --color-on-surface-variant: #434653;
+  --color-outline: #737784;
+  --color-outline-variant: #c3c6d5;
+  --color-neutral-gray: #64748b;
+  --color-neutral-bg: #ffffff;
+  --color-inverse-surface: #2e3037;
+  --color-inverse-on-surface: #f0f0f9;
+  --color-inverse-primary: #b0c6ff;
+  --color-primary-fixed: #d9e2ff;
+  --color-primary-fixed-dim: #b0c6ff;
+  --color-tertiary: #2b3952;
+  --color-tertiary-container: #42506a;
+
+  --font-hanken: var(--font-hanken-grotesk), "Hanken Grotesk", sans-serif;
+  --font-inter: var(--font-inter), "Inter", sans-serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #faf8ff;
+  --foreground: #191b22;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6, .font-display, .font-headline {
+  font-family: var(--font-hanken), var(--font-inter), system-ui, sans-serif;
+}
+
+/* Glassmorphism & custom utility styles */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.glass-card-dark {
+  background: rgba(5, 20, 43, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hero-pattern {
+  background-image: radial-gradient(rgba(0, 74, 173, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.glow-orange {
+  box-shadow: 0 0 35px -5px rgba(243, 146, 0, 0.35);
+}
+
+.glow-blue {
+  box-shadow: 0 0 40px -5px rgba(0, 74, 173, 0.3);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f5;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c3c6d5;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #004aad;
 }
