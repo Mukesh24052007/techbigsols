@@ -2,12 +2,6 @@ import type { Metadata } from "next";
 import { Hanken_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/context/ToastContext";
-import { CartProvider } from "@/context/CartContext";
-import { QuoteModalProvider } from "@/context/QuoteModalContext";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-import { CartDrawer } from "@/components/cart/CartDrawer";
-import { QuoteModal } from "@/components/ui/QuoteModal";
 
 const hankenGrotesk = Hanken_Grotesk({
   variable: "--font-hanken-grotesk",
@@ -45,15 +39,7 @@ export default function RootLayout({
     <html lang="en" className={`${hankenGrotesk.variable} ${inter.variable} scroll-smooth`}>
       <body className="font-body min-h-screen flex flex-col antialiased bg-surface text-on-surface selection:bg-brand-blue selection:text-white">
         <ToastProvider>
-          <CartProvider>
-            <QuoteModalProvider>
-              <Navbar />
-              <div className="flex-1 flex flex-col w-full">{children}</div>
-              <Footer />
-              <CartDrawer />
-              <QuoteModal />
-            </QuoteModalProvider>
-          </CartProvider>
+          {children}
         </ToastProvider>
       </body>
     </html>

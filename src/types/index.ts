@@ -1,14 +1,16 @@
 export interface Product {
   id: string;
   name: string;
-  category: "Accessories" | "Hardware" | "Office Tech" | "Smart Devices";
+  /** Free-form category string matching the backend schema (e.g. "Electronics", "Accessories", …) */
+  category: string;
   price: number;
   rating: number;
-  reviewsCount: number;
-  badge?: "New" | "Best Seller" | "Popular" | "Featured";
+  reviewsCount?: number;
+  badge?: string;
   image: string;
   shortDescription: string;
   description: string;
+  /** Specs stored as a key→value map internally; converted to/from { key, value }[] on the wire */
   specs: { [key: string]: string };
   inStock: boolean;
 }

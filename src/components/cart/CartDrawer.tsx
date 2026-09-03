@@ -103,7 +103,7 @@ export function CartDrawer() {
                       {item.product.name}
                     </h4>
                     <p className="text-xs font-bold text-brand-blue mt-0.5">
-                      ${item.product.price.toFixed(2)}
+                      ₹{item.product.price.toFixed(2)}
                     </p>
 
                     <div className="flex items-center justify-between mt-2.5">
@@ -153,7 +153,7 @@ export function CartDrawer() {
                 </div>
                 <div className="flex justify-between text-base font-bold text-slate-900 pt-2 border-t border-slate-200">
                   <span>Subtotal</span>
-                  <span className="text-brand-blue">${subtotal.toFixed(2)}</span>
+                  <span className="text-brand-blue">₹{subtotal.toFixed(2)}</span>
                 </div>
               </div>
 

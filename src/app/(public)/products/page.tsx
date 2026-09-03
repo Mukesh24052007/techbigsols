@@ -1,24 +1,51 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { productsData } from "@/data/products";
+import React, { useState, useMemo, useEffect } from "react";
+import type { Product } from "@/types";
 import { ProductCard } from "@/components/products/ProductCard";
 import { useQuoteModal } from "@/context/QuoteModalContext";
-import { Search, SlidersHorizontal, PackageCheck, Truck, ShieldCheck, ArrowRight } from "lucide-react";
+import { fetchProducts } from "@/lib/api/products";
+import {
+  Search,
+  SlidersHorizontal,
+  PackageCheck,
+  Truck,
+  ShieldCheck,
+  ArrowRight,
+  Loader2,
+} from "lucide-react";
 
 export default function ProductsPage() {
   const { openQuoteModal } = useQuoteModal();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [sortBy, setSortBy] = useState<string>("featured");
 
-  const categories = ["All", "Accessories", "Smart Devices", "Hardware", "Office Tech"];
+  useEffect(() => {
+    fetchProducts()
+      .then((data) => {
+        setProducts(data);
+      })
+      .catch((err) => {
+        console.error("Failed to load products:", err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  const categories = useMemo(() => {
+    const list = ["All", ...Array.from(new Set(products.map((p) => p.category)))];
+    return list;
+  }, [products]);
 
   const filteredProducts = useMemo(() => {
-    return productsData
+    return products
       .filter((p) => {
         const matchesCategory =
-          selectedCategory === "All" || p.category === selectedCategory;
+          selectedCategory === "All" || p.category.toLowerCase() === selectedCategory.toLowerCase();
         const matchesSearch =
           p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           p.shortDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -31,7 +58,7 @@ export default function ProductsPage() {
         if (sortBy === "rating") return b.rating - a.rating;
         return 0; // default featured
       });
-  }, [searchQuery, selectedCategory, sortBy]);
+  }, [products, searchQuery, selectedCategory, sortBy]);
 
   return (
     <main className="flex-1 w-full bg-surface pb-20">
@@ -115,8 +142,13 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        {/* Products Grid */}
-        {filteredProducts.length === 0 ? (
+        {/* Loading Spinner */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-24 gap-3">
+            <Loader2 className="w-8 h-8 text-brand-blue animate-spin" />
+            <p className="text-sm text-slate-500 font-medium">Loading catalog...</p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <div className="py-24 text-center bg-white rounded-2xl border border-slate-200 p-8 space-y-4">
             <p className="text-lg font-bold text-slate-800">No matching products found</p>
             <p className="text-sm text-slate-500 max-w-sm mx-auto">

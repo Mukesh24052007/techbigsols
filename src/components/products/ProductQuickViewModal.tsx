@@ -79,7 +79,6 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                 <div className="flex items-center gap-1 text-xs text-amber-500 font-semibold">
                   <Star className="w-3.5 h-3.5 fill-current" />
                   <span>{product.rating}</span>
-                  <span className="text-slate-400 font-normal">({product.reviewsCount} reviews)</span>
                 </div>
               </div>
 
@@ -88,7 +87,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
               </h2>
 
               <p className="text-2xl font-bold font-display text-primary mb-4">
-                ${product.price.toFixed(2)}
+                ₹{product.price.toFixed(2)}
               </p>
 
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-6">

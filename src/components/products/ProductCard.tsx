@@ -74,7 +74,6 @@ export function ProductCard({ product }: ProductCardProps) {
             <div className="flex items-center gap-1 text-xs text-amber-500 font-semibold">
               <Star className="w-3.5 h-3.5 fill-current" />
               <span>{product.rating}</span>
-              <span className="text-slate-400 font-normal">({product.reviewsCount})</span>
             </div>
           </div>
 
@@ -94,7 +93,7 @@ export function ProductCard({ product }: ProductCardProps) {
             <div>
               <span className="text-xs text-slate-400 block font-medium">Enterprise Price</span>
               <span className="text-xl font-bold font-display text-primary">
-                ${product.price.toFixed(2)}
+                ₹{product.price.toFixed(2)}
               </span>
             </div>
 

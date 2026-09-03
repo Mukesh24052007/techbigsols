@@ -51,7 +51,7 @@ export function QuoteModal() {
       />
 
       {/* Modal Card */}
-      <div className="relative bg-white dark:bg-surface-deep w-full max-w-2xl rounded-2xl shadow-2xl border border-outline-variant/40 overflow-hidden z-10 my-8 animate-scale-up">
+      <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-10 my-8 animate-scale-up">
         {/* Header */}
         <div className="bg-gradient-to-r from-primary to-brand-blue text-white p-6 sm:p-8 relative">
           <button
@@ -71,7 +71,7 @@ export function QuoteModal() {
         </div>
 
         {/* Content */}
-        <div className="p-6 sm:p-8">
+        <div className="p-6 sm:p-8 bg-white">
           {isSubmitted ? (
             <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center animate-bounce">
@@ -85,7 +85,7 @@ export function QuoteModal() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase text-slate-600 mb-2">
+                <label className="block text-xs font-semibold uppercase text-slate-700 mb-2">
                   Select Service Area
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -102,7 +102,7 @@ export function QuoteModal() {
                       className={`text-xs font-medium py-2.5 px-3 rounded-lg border text-center transition-all ${
                         formData.service === s
                           ? "bg-brand-blue text-white border-brand-blue shadow-sm font-semibold"
-                          : "bg-surface-container-low text-slate-700 border-outline-variant/60 hover:border-brand-blue/60"
+                          : "bg-white text-slate-700 border-slate-300 hover:border-brand-blue/60"
                       }`}
                     >
                       {s}
@@ -120,7 +120,7 @@ export function QuoteModal() {
                     placeholder="John Doe"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -131,7 +131,7 @@ export function QuoteModal() {
                     placeholder="john@company.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent"
                   />
                 </div>
               </div>
@@ -144,7 +144,7 @@ export function QuoteModal() {
                     placeholder="+91 98765 43210"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -154,7 +154,7 @@ export function QuoteModal() {
                     placeholder="Acme Corp"
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent"
                   />
                 </div>
               </div>
@@ -166,12 +166,12 @@ export function QuoteModal() {
                   placeholder="Tell us about your project scope, timeline, and requirements..."
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent resize-none"
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent resize-none"
                 />
               </div>
 
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-4 text-xs text-slate-500">
+                <div className="flex items-center gap-4 text-xs text-slate-600">
                   <span className="flex items-center gap-1">
                     <Phone className="w-3.5 h-3.5 text-brand-blue" /> Direct Call: +91 80 4123 4567
                   </span>
