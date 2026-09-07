@@ -47,3 +47,48 @@ export interface FAQItem {
   answer: string;
   category: string;
 }
+
+// ─── User / Portal Types ───────────────────────────────────────────────────
+
+export const MODULE_KEYS = [
+  "attendance",
+  "assetMaster",
+  "productMaster",
+  "employeeMaster",
+  "payrollSheet",
+  "accountsModule",
+  "inventoryReport",
+  "profitAndLoss",
+  "balanceSheet",
+  "trialBalance",
+] as const;
+
+export type ModuleKey = (typeof MODULE_KEYS)[number];
+
+export const MODULE_LABELS: Record<ModuleKey, string> = {
+  attendance: "Attendance",
+  assetMaster: "Asset Master",
+  productMaster: "Product Master",
+  employeeMaster: "Employee Master",
+  payrollSheet: "Payroll Sheet",
+  accountsModule: "Accounts Module",
+  inventoryReport: "Inventory Report",
+  profitAndLoss: "Profit & Loss",
+  balanceSheet: "Balance Sheet",
+  trialBalance: "Trial Balance",
+};
+
+export type ModulePermissions = Record<ModuleKey, boolean>;
+
+export interface PortalUser {
+  id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  permissions: ModulePermissions;
+  isActive: boolean;
+  createdAt: string;
+}
+
+/** Safe version (no passwordHash) sent to clients */
+export type PortalUserPublic = Omit<PortalUser, "passwordHash">;

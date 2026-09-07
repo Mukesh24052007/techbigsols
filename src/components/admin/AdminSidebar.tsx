@@ -7,6 +7,7 @@ import { useAdminAuth } from "@/context/AdminAuthContext";
 import {
   LayoutDashboard,
   Package,
+  Users,
   LogOut,
   X,
   ChevronRight,
@@ -21,6 +22,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Products", href: "/admin/dashboard/products", icon: Package },
+  { label: "User Master", href: "/admin/dashboard/users", icon: Users },
 ];
 
 interface AdminSidebarProps {

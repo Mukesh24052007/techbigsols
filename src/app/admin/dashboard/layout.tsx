@@ -11,6 +11,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.endsWith("/products/new")) return "Add Product";
   if (pathname.match(/\/products\/[^/]+\/edit$/)) return "Edit Product";
   if (pathname.endsWith("/products")) return "Products";
+  if (pathname.endsWith("/users")) return "User Master";
   return "Dashboard";
 }
 
