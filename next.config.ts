@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // ── Output ──────────────────────────────────────────────────────────────────
+  // Produces .next/standalone — required for Docker/ECS deployments on AWS.
+  // The standalone folder includes a minimal Node.js server and only the
+  // production dependencies needed to run the app.
+  output: "standalone",
+
   // ── Images ──────────────────────────────────────────────────────────────────
   images: {
     remotePatterns: [
