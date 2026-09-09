@@ -36,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${hankenGrotesk.variable} ${inter.variable} scroll-smooth`}>
+    <html lang="en" data-scroll-behavior="smooth" className={`${hankenGrotesk.variable} ${inter.variable} scroll-smooth`}>
       <body className="font-body min-h-screen flex flex-col antialiased bg-surface text-on-surface selection:bg-brand-blue selection:text-white">
         <ToastProvider>
           {children}

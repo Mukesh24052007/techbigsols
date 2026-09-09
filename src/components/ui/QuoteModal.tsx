@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useQuoteModal } from "@/context/QuoteModalContext";
 import { useToast } from "@/context/ToastContext";
-import { X, Send, Phone, Mail, Building2, CheckCircle2 } from "lucide-react";
+import { X, Send, Phone, Mail, CheckCircle2 } from "lucide-react";
 
 export function QuoteModal() {
   const { isQuoteModalOpen, closeQuoteModal, selectedService } = useQuoteModal();
@@ -43,7 +43,7 @@ export function QuoteModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-surface-deep/80 backdrop-blur-md transition-opacity animate-fade-in"
@@ -51,7 +51,7 @@ export function QuoteModal() {
       />
 
       {/* Modal Card */}
-      <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-10 my-8 animate-scale-up">
+      <div className="relative bg-white w-full max-w-2xl rounded-none sm:rounded-2xl shadow-2xl border-0 sm:border border-slate-200 overflow-hidden z-10 min-h-dvh sm:min-h-0 sm:my-6 mx-0 sm:mx-4 animate-scale-up">
         {/* Header */}
         <div className="bg-gradient-to-r from-primary to-brand-blue text-white p-6 sm:p-8 relative">
           <button
@@ -88,22 +88,22 @@ export function QuoteModal() {
                 <label className="block text-xs font-semibold uppercase text-slate-700 mb-2">
                   Select Service Area
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-5 gap-2">
                   {[
-                    "IT Services",
-                    "Recruitment & HR",
-                    "Training & Support",
-                    "Business Consulting",
+                    "SAP Training",
+                    "Skill Courses",
+                    "Hardware Service",
+                    "Travel Booking",
+                    "Import / Export",
                   ].map((s) => (
                     <button
                       key={s}
                       type="button"
                       onClick={() => setFormData({ ...formData, service: s })}
-                      className={`text-xs font-medium py-2.5 px-3 rounded-lg border text-center transition-all ${
-                        formData.service === s
+                      className={`text-xs font-medium py-2.5 px-3 rounded-lg border text-center transition-all ${formData.service === s
                           ? "bg-brand-blue text-white border-brand-blue shadow-sm font-semibold"
                           : "bg-white text-slate-700 border-slate-300 hover:border-brand-blue/60"
-                      }`}
+                        }`}
                     >
                       {s}
                     </button>
@@ -124,11 +124,11 @@ export function QuoteModal() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Work Email *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Email *</label>
                   <input
                     type="email"
                     required
-                    placeholder="john@company.com"
+                    placeholder="john@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent"
@@ -138,20 +138,21 @@ export function QuoteModal() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Phone Number</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Phone Number *</label>
                   <input
                     type="tel"
-                    placeholder="+91 98765 43210"
+                    required
+                    placeholder="+91 81221 96279"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Company / Organization</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">City / Center (Ambattur)</label>
                   <input
                     type="text"
-                    placeholder="Acme Corp"
+                    placeholder="Chennai"
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent"
@@ -160,30 +161,30 @@ export function QuoteModal() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Project Details / Goals</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Requirement / Module Details</label>
                 <textarea
                   rows={3}
-                  placeholder="Tell us about your project scope, timeline, and requirements..."
+                  placeholder="Specify SAP module, software course, device issue, or travel dates..."
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent resize-none"
                 />
               </div>
 
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-4 text-xs text-slate-600">
+              <div className="pt-2 flex flex-col gap-3">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
                   <span className="flex items-center gap-1">
-                    <Phone className="w-3.5 h-3.5 text-brand-blue" /> Direct Call: +91 80 4123 4567
+                    <Phone className="w-3.5 h-3.5 shrink-0 text-brand-blue" /> Call / WhatsApp: +91 8122196279
                   </span>
-                  <span className="hidden sm:inline">•</span>
-                  <span className="hidden sm:flex items-center gap-1">
-                    <Mail className="w-3.5 h-3.5 text-brand-blue" /> info@techbigsolutions.in
+                  <span className="hidden sm:inline text-slate-400">•</span>
+                  <span className="flex items-center gap-1">
+                    <Mail className="w-3.5 h-3.5 shrink-0 text-brand-blue" /> techbigsolutions@gmail.com
                   </span>
                 </div>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto bg-action-orange hover:bg-secondary-container text-white px-8 py-3 rounded-lg font-semibold text-sm transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 active:scale-95 disabled:opacity-70"
+                  className="w-full sm:w-auto sm:self-end bg-action-orange hover:bg-secondary-container text-white px-8 py-3 rounded-lg font-semibold text-sm transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 active:scale-95 disabled:opacity-70"
                 >
                   {isSubmitting ? (
                     <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

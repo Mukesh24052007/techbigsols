@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ShieldCheck, Zap, Clock } from "lucide-react";
+import { ShieldCheck, Award, Wrench, Clock, MapPin, CheckCircle2, Phone } from "lucide-react";
 
 export function WhyChooseUsSection() {
   return (
@@ -9,62 +9,116 @@ export function WhyChooseUsSection() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         {/* Left: Text Content */}
         <div className="space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-blue/10 text-brand-blue rounded-full text-xs font-bold uppercase tracking-wider">
-            The Enterprise Edge
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-brand-blue/10 text-brand-blue rounded-full text-xs font-bold uppercase tracking-wider">
+            Why Choose Us?
           </div>
-          <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-primary">
-            Why Industry Leaders Partner With TechBigSolutions
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-extrabold text-primary leading-tight">
+            Built on Enterprise Excellence & Client Trust
           </h2>
           <p className="text-slate-600 text-base leading-relaxed">
-            We combine deep technical mastery with proactive consulting to design, implement, and maintain resilient business ecosystems.
+            Whether you are advancing your tech career with certified SAP & software skills, repairing critical workstations, or planning seamless travel — TechBig Solutions delivers unmatched quality, transparency, and personal care.
           </p>
 
           {/* Feature Cards */}
           <div className="space-y-4 pt-2">
-            <div className="flex items-start gap-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+            <div className="flex items-start gap-4 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                <Award className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">100% Placement Assistance & Offer Support</h4>
+                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                  Rigorous interview coaching, project resume formatting, and direct recruitment partner referrals across top MNCs.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-11 h-11 rounded-xl bg-blue-100 text-brand-blue flex items-center justify-center flex-shrink-0">
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-slate-900">Zero-Compromise Security & SLAs</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Enterprise encryption, proactive monitoring, and strict SLAs for continuous operations.</p>
+                <h4 className="text-sm font-bold text-slate-900">17+ Years Industry Pedigree</h4>
+                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                  Founded and led by certified SAP leads with hands-on enterprise architect experience at Apple, Accenture, Pfizer, and Wipro.
+                </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <div className="w-10 h-10 rounded-lg bg-blue-100 text-brand-blue flex items-center justify-center flex-shrink-0">
-                <Zap className="w-5 h-5" />
+            <div className="flex items-start gap-4 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-11 h-11 rounded-xl bg-amber-100 text-action-orange flex items-center justify-center flex-shrink-0">
+                <Wrench className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-slate-900">Rapid Deployment & Turnkey Setup</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Fast workstation rollouts, seamless cloud migrations, and immediate staffing pipelines.</p>
+                <h4 className="text-sm font-bold text-slate-900">Fast Doorstep Hardware Service from ₹500/-</h4>
+                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                  Certified hardware engineers come to your office or home anywhere in Chennai, using 100% genuine components with warranty.
+                </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <div className="w-10 h-10 rounded-lg bg-amber-100 text-action-orange flex items-center justify-center flex-shrink-0">
+            <div className="flex items-start gap-4 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-11 h-11 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
                 <Clock className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-slate-900">24/7 Dedicated Multi-Tier Support</h4>
-                <p className="text-xs text-slate-500 mt-0.5">Direct access to certified network engineers and solution architects around the clock.</p>
+                <h4 className="text-sm font-bold text-slate-900">24/7 Travel & Temple Darshan Desk</h4>
+                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                  Instant confirmed flight tickets, Tatkal train booking, and guaranteed Tirupati Balaji Special Entry Darshan with accommodation.
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right: Image */}
-        <div className="relative">
-          <div className="relative rounded-3xl overflow-hidden border border-slate-200 shadow-2xl bg-white p-3">
-            <img
-              src="https://nhxkqgwbiiaervkaeres.supabase.co/storage/v1/object/public/techbig/SystemSales&IT-services.jpg"
-              alt="TechBigSolutions Office and Systems"
-              className="rounded-2xl w-full h-[400px] object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-surface-deep/80 via-transparent to-transparent rounded-2xl pointer-events-none" />
-            <div className="absolute bottom-8 left-8 right-8 text-white">
-              <p className="text-xs uppercase font-bold text-action-orange tracking-wider">Proven Track Record</p>
-              <p className="text-lg font-bold font-display mt-1">Transforming operations for 150+ high-growth companies across India & abroad.</p>
+        {/* Right: Dual Location Card & Quick Action */}
+        <div className="space-y-6">
+          <div className="bg-surface-deep text-white p-8 rounded-3xl border border-slate-800 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-action-orange/15 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold text-amber-300 uppercase tracking-wider">
+                <MapPin className="w-3.5 h-3.5" />
+                <span>Our Regional Centers</span>
+              </div>
+
+              <h3 className="text-2xl sm:text-3xl font-display font-extrabold text-white">
+                Serving Businesses & Learners Across Chennai
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
+                  <h4 className="text-base font-bold text-action-orange mb-1">
+                    Center
+                  </h4>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Industrial corridor hub catering to manufacturing, logistics ERP, and enterprise technical training.
+                  </p>
+                </div>
+
+                <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
+                  <h4 className="text-base font-bold text-action-orange mb-1">
+                    Ambattur Center
+                  </h4>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    IT Park & commercial zone hub providing hands-on hardware care, student training & walk-in ticketing desk.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs text-slate-400">Direct Support Helpline</p>
+                  <p className="text-lg font-bold text-white">(+91) 8122196279</p>
+                </div>
+                <a
+                  href="tel:8122196279"
+                  className="w-full sm:w-auto bg-action-orange hover:bg-orange-600 text-white text-xs font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
+                >
+                  <Phone className="w-4 h-4" />
+                  <span>Call Us Now</span>
+                </a>
+              </div>
             </div>
           </div>
         </div>

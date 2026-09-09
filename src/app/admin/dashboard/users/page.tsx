@@ -13,6 +13,20 @@ function authHeaders() {
   return { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
 }
 
+// Exact strings the backend expects/returns in moduleAccess[]
+const BACKEND_MODULE_LABELS: Record<ModuleKey, string> = {
+  attendance: "Attendance",
+  assetMaster: "Asset master",
+  productMaster: "Product master",
+  employeeMaster: "Employee master",
+  payrollSheet: "Payroll sheet",
+  accountsModule: "Accounts module",
+  inventoryReport: "Inventory report",
+  profitAndLoss: "Profit and loss",
+  balanceSheet: "Balance sheet",
+  trialBalance: "Trial balance",
+};
+
 // ── Create User Modal ────────────────────────────────────────────────────
 
 interface CreateUserModalProps {
@@ -56,7 +70,12 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: authHeaders(),
-        body: JSON.stringify({ name: name.trim(), email: email.trim(), password, permissions }),
+        body: JSON.stringify({
+          fullname: name.trim(),
+          email: email.trim(),
+          password,
+          moduleAccess: MODULE_KEYS.filter((k) => permissions[k]).map((k) => BACKEND_MODULE_LABELS[k]),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message ?? "Failed to create user.");
@@ -85,7 +104,7 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
           </button>
         </div>
 
-        {/* The entire card body + footer is ONE form so the submit button is always inside it */}
+        {/* Body + footer wrapped in one form */}
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
 
           {/* Scrollable body */}
@@ -151,7 +170,7 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
               </div>
             </div>
 
-            {/* Permissions */}
+            {/* Module Access */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
@@ -189,7 +208,7 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
             </div>
           </div>
 
-          {/* Footer — inside the form so type="submit" works natively */}
+          {/* Footer */}
           <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3 flex-shrink-0">
             <button
               type="button"
@@ -235,6 +254,7 @@ export default function UserMasterPage() {
   const [showModal, setShowModal] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -259,7 +279,7 @@ export default function UserMasterPage() {
       await fetch(`/api/admin/users/${user.id}`, {
         method: "PUT",
         headers: authHeaders(),
-        body: JSON.stringify({ isActive: !user.isActive }),
+        body: JSON.stringify({ is_active: !user.is_active }),
       });
       await fetchUsers();
     } finally {
@@ -270,16 +290,25 @@ export default function UserMasterPage() {
   const deleteUser = async (id: string) => {
     if (!confirm("Delete this user? This cannot be undone.")) return;
     setDeletingId(id);
+    setError(null);
     try {
-      await fetch(`/api/admin/users/${id}`, { method: "DELETE", headers: authHeaders() });
-      await fetchUsers();
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.message ?? `Failed to delete user (${res.status}).`);
+        return;
+      }
+      // Optimistically remove from local state — avoids a full reload spinner
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+    } catch {
+      setError("Network error — could not delete user.");
     } finally {
       setDeletingId(null);
     }
   };
-
-  const grantedCount = (u: PortalUserPublic) =>
-    MODULE_KEYS.filter((k) => u.permissions[k]).length;
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -307,6 +336,21 @@ export default function UserMasterPage() {
         </div>
       </div>
 
+      {/* Delete error banner */}
+      {error && (
+        <div className="mb-4 flex items-center justify-between gap-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl px-4 py-3 text-sm">
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="text-rose-400 hover:text-rose-600 flex-shrink-0"
+            aria-label="Dismiss error"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Table / Empty state */}
       {loading ? (
         <div className="flex items-center justify-center py-24">
@@ -333,41 +377,46 @@ export default function UserMasterPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {users.map((u) => (
-                <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+              {users.map((u, idx) => (
+                <tr key={u.id ?? `user-row-${idx}`} className="hover:bg-slate-50 transition-colors">
                   {/* User */}
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-[#004aad]/10 border border-[#004aad]/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-[#004aad] text-xs font-bold">{u.name[0]?.toUpperCase()}</span>
+                        <span className="text-[#004aad] text-xs font-bold">
+                          {u.fullname?.[0]?.toUpperCase() ?? "?"}
+                        </span>
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-slate-800 truncate">{u.name}</p>
+                        <p className="font-medium text-slate-800 truncate">{u.fullname}</p>
                         <p className="text-xs text-slate-400 truncate">{u.email}</p>
+                        <p className="text-[10px] font-mono text-slate-300 mt-0.5">{u.id}</p>
                       </div>
                     </div>
                   </td>
                   {/* Modules */}
                   <td className="px-5 py-4 hidden sm:table-cell">
                     <div className="flex flex-wrap gap-1 max-w-xs">
-                      {MODULE_KEYS.filter((k) => u.permissions[k]).slice(0, 4).map((k) => (
-                        <span key={k} className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#004aad]/8 text-[#004aad]">
-                          {MODULE_LABELS[k]}
+                      {(u.moduleAccess ?? []).slice(0, 4).map((label, i) => (
+                        <span key={`${u.id}-mod-${i}`} className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#004aad]/8 text-[#004aad]">
+                          {label}
                         </span>
                       ))}
-                      {grantedCount(u) > 4 && (
+                      {(u.moduleAccess?.length ?? 0) > 4 && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-500">
-                          +{grantedCount(u) - 4} more
+                          +{(u.moduleAccess?.length ?? 0) - 4} more
                         </span>
                       )}
-                      {grantedCount(u) === 0 && (
+                      {(u.moduleAccess?.length ?? 0) === 0 && (
                         <span className="text-xs text-slate-300">No access</span>
                       )}
                     </div>
                   </td>
                   {/* Created */}
                   <td className="px-5 py-4 text-slate-400 text-xs hidden md:table-cell">
-                    {new Date(u.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                    {u.createdAt
+                      ? new Date(u.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+                      : "—"}
                   </td>
                   {/* Status */}
                   <td className="px-5 py-4">
@@ -375,19 +424,22 @@ export default function UserMasterPage() {
                       onClick={() => void toggleActive(u)}
                       disabled={togglingId === u.id}
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
-                        u.isActive
+                        u.is_active
                           ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
                           : "bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200"
                       }`}
                     >
                       {togglingId === u.id ? (
-                        <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
-                      ) : u.isActive ? (
+                        <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                        </svg>
+                      ) : u.is_active ? (
                         <ShieldCheck className="w-3 h-3" />
                       ) : (
                         <ShieldOff className="w-3 h-3" />
                       )}
-                      {u.isActive ? "Active" : "Inactive"}
+                      {u.is_active ? "Active" : "Inactive"}
                     </button>
                   </td>
                   {/* Actions */}
@@ -396,10 +448,13 @@ export default function UserMasterPage() {
                       onClick={() => void deleteUser(u.id)}
                       disabled={deletingId === u.id}
                       className="p-2 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all disabled:opacity-50"
-                      aria-label={`Delete ${u.name}`}
+                      aria-label={`Delete ${u.fullname}`}
                     >
                       {deletingId === u.id ? (
-                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                        </svg>
                       ) : (
                         <Trash2 className="w-4 h-4" />
                       )}

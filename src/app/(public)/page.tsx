@@ -2,13 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import { useQuoteModal } from "@/context/QuoteModalContext";
-import { testimonialsData } from "@/data/services";
 import { HeroSection } from "@/components/home/HeroSection";
-import { CoreExpertiseSection } from "@/components/home/CoreExpertiseSection";
-import { FeaturedProductsSection } from "@/components/home/FeaturedProductsSection";
-import { WhyChooseUsSection } from "@/components/home/WhyChooseUsSection";
-import { TestimonialsSection } from "@/components/home/TestimonialsSection";
+import { SapTrainingSection } from "@/components/home/SapTrainingSection";
+import { TechCoursesSection } from "@/components/home/TechCoursesSection";
+import { HardwareServicesSection } from "@/components/home/HardwareServicesSection";
+import { TravelBookingsSection } from "@/components/home/TravelBookingsSection";
+import { ImportExportSection } from "@/components/home/ImportExportSection";
 import { MeetTheTeamSection } from "@/components/home/MeetTheTeamSection";
+import { WhyChooseUsSection } from "@/components/home/WhyChooseUsSection";
+import { FeaturedProductsSection } from "@/components/home/FeaturedProductsSection";
+import { TestimonialsSection } from "@/components/home/TestimonialsSection";
 import { CtaBannerSection } from "@/components/home/CtaBannerSection";
 import { fetchProducts } from "@/lib/api/products";
 import type { Product } from "@/types";
@@ -31,13 +34,27 @@ export default function HomePage() {
 
   return (
     <main className="flex-1 w-full flex flex-col">
-      <HeroSection onOpenQuoteModal={openQuoteModal} />
-      <CoreExpertiseSection />
-      <FeaturedProductsSection products={products} />
-      <WhyChooseUsSection />
+      <HeroSection onOpenQuoteModal={() => openQuoteModal("General Consultation")} />
+      {/* Priority 1: SAP Training with all 10 modules */}
+      <SapTrainingSection />
+      {/* Priority 2: In-Demand Software & Tech Skills */}
+      <TechCoursesSection />
+      {/* Priority 3: Hardware Services & AMC from ₹500 */}
+      <HardwareServicesSection />
+      {/* Priority 4: Ticket Bookings (Flight, Train, Tirupati) */}
+      <TravelBookingsSection />
+      {/* Priority 5: Global Import / Export Logistics & Shipments */}
+      <ImportExportSection />
+      {/* Founder & Enterprise Leadership Profile */}
       <MeetTheTeamSection />
-      <TestimonialsSection testimonials={testimonialsData} />
-      <CtaBannerSection onOpenQuoteModal={openQuoteModal} />
+      {/* Why Choose Us & Dual Centers */}
+      <WhyChooseUsSection />
+      {/* Hardware & Accessory Products */}
+      {products.length > 0 && <FeaturedProductsSection products={products} />}
+      {/* Real Testimonials */}
+      <TestimonialsSection />
+      {/* Final Action CTA Banner */}
+      <CtaBannerSection onOpenQuoteModal={() => openQuoteModal("General Consultation")} />
     </main>
   );
 }

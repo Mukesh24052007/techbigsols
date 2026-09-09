@@ -46,15 +46,19 @@ export function Footer() {
             <div className="space-y-2 pt-2 text-xs text-slate-300">
               <div className="flex items-center gap-2.5">
                 <MapPin className="w-4 h-4 text-action-orange flex-shrink-0" />
-                <span>Indiranagar Tech Hub, Bangalore, Karnataka, India</span>
+                <span>Ambattur, Chennai, Tamil Nadu, India</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-action-orange flex-shrink-0" />
-                <span>+91 80 4123 4567 / +91 98765 43210</span>
+                <span>(+91) 81221 96279 / 81223 48442</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-action-orange flex-shrink-0" />
-                <span>contact@techbigsolutions.in</span>
+                <span>techbigsolutions@gmail.com</span>
+              </div>
+              <div className="flex items-center gap-2.5 pt-1">
+                <ShieldCheck className="w-4 h-4 text-action-orange flex-shrink-0" />
+                <span className="text-slate-400">GSTIN&nbsp;<span className="font-mono font-semibold text-slate-200 tracking-wide">33BCCPM5639JIZH</span></span>
               </div>
             </div>
           </div>
@@ -62,27 +66,32 @@ export function Footer() {
           {/* Quick Links */}
           <div className="space-y-4">
             <h3 className="text-sm font-bold uppercase tracking-wider text-surface-bright border-b border-slate-800 pb-2">
-              Solutions
+              Our Services
             </h3>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <Link href="/services#recruitment-hr" className="text-slate-300 hover:text-white hover:underline decoration-action-orange underline-offset-4 transition-all">
-                  Recruitment & HR
+                <Link href="/#sap-training" className="text-slate-300 hover:text-white hover:underline decoration-action-orange underline-offset-4 transition-all">
+                  SAP Training (10 Modules)
                 </Link>
               </li>
               <li>
-                <Link href="/services#it-services" className="text-slate-300 hover:text-white hover:underline decoration-action-orange underline-offset-4 transition-all">
-                  System Sales & IT
+                <Link href="/#tech-courses" className="text-slate-300 hover:text-white hover:underline decoration-action-orange underline-offset-4 transition-all">
+                  In-Demand Skill Courses
                 </Link>
               </li>
               <li>
-                <Link href="/services#training-support" className="text-slate-300 hover:text-white hover:underline decoration-action-orange underline-offset-4 transition-all">
-                  Training & Support
+                <Link href="/#hardware-services" className="text-slate-300 hover:text-white hover:underline decoration-action-orange underline-offset-4 transition-all">
+                  Hardware Service & AMC (₹500+)
                 </Link>
               </li>
               <li>
-                <Link href="/services#business-consulting" className="text-slate-300 hover:text-white hover:underline decoration-action-orange underline-offset-4 transition-all">
-                  Business Consulting
+                <Link href="/#travel-bookings" className="text-slate-300 hover:text-white hover:underline decoration-action-orange underline-offset-4 transition-all">
+                  Flight, Train & Tirupati Booking
+                </Link>
+              </li>
+              <li>
+                <Link href="/#import-export" className="text-slate-300 hover:text-white hover:underline decoration-action-orange underline-offset-4 transition-all">
+                  Import / Export & Logistics
                 </Link>
               </li>
               <li>

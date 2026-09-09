@@ -82,11 +82,11 @@ export type ModulePermissions = Record<ModuleKey, boolean>;
 
 export interface PortalUser {
   id: string;
-  name: string;
+  fullname: string;
   email: string;
   passwordHash: string;
-  permissions: ModulePermissions;
-  isActive: boolean;
+  moduleAccess: string[];
+  is_active: boolean;
   createdAt: string;
 }
 
