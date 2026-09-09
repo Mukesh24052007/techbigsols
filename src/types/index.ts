@@ -81,7 +81,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
 export type ModulePermissions = Record<ModuleKey, boolean>;
 
 export interface PortalUser {
-  id: string;
+  user_id: string;
   fullname: string;
   email: string;
   passwordHash: string;

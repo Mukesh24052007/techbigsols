@@ -274,9 +274,9 @@ export default function UserMasterPage() {
   }, [isAuthenticated, fetchUsers]);
 
   const toggleActive = async (user: PortalUserPublic) => {
-    setTogglingId(user.id);
+    setTogglingId(user.user_id);
     try {
-      await fetch(`/api/admin/users/${user.id}`, {
+      await fetch(`/api/admin/users/${user.user_id}`, {
         method: "PUT",
         headers: authHeaders(),
         body: JSON.stringify({ is_active: !user.is_active }),
@@ -302,7 +302,7 @@ export default function UserMasterPage() {
         return;
       }
       // Optimistically remove from local state — avoids a full reload spinner
-      setUsers((prev) => prev.filter((u) => u.id !== id));
+      setUsers((prev) => prev.filter((u) => u.user_id !== id));
     } catch {
       setError("Network error — could not delete user.");
     } finally {
@@ -378,7 +378,7 @@ export default function UserMasterPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {users.map((u, idx) => (
-                <tr key={u.id ?? `user-row-${idx}`} className="hover:bg-slate-50 transition-colors">
+                <tr key={u.user_id ?? `user-row-${idx}`} className="hover:bg-slate-50 transition-colors">
                   {/* User */}
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
@@ -390,7 +390,7 @@ export default function UserMasterPage() {
                       <div className="min-w-0">
                         <p className="font-medium text-slate-800 truncate">{u.fullname}</p>
                         <p className="text-xs text-slate-400 truncate">{u.email}</p>
-                        <p className="text-[10px] font-mono text-slate-300 mt-0.5">{u.id}</p>
+                        <p className="text-[10px] font-mono text-slate-300 mt-0.5">{u.user_id}</p>
                       </div>
                     </div>
                   </td>
@@ -398,7 +398,7 @@ export default function UserMasterPage() {
                   <td className="px-5 py-4 hidden sm:table-cell">
                     <div className="flex flex-wrap gap-1 max-w-xs">
                       {(u.moduleAccess ?? []).slice(0, 4).map((label, i) => (
-                        <span key={`${u.id}-mod-${i}`} className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#004aad]/8 text-[#004aad]">
+                        <span key={`${u.user_id}-mod-${i}`} className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#004aad]/8 text-[#004aad]">
                           {label}
                         </span>
                       ))}
@@ -422,14 +422,14 @@ export default function UserMasterPage() {
                   <td className="px-5 py-4">
                     <button
                       onClick={() => void toggleActive(u)}
-                      disabled={togglingId === u.id}
+                      disabled={togglingId === u.user_id}
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
                         u.is_active
                           ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
                           : "bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200"
                       }`}
                     >
-                      {togglingId === u.id ? (
+                      {togglingId === u.user_id ? (
                         <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
@@ -445,12 +445,12 @@ export default function UserMasterPage() {
                   {/* Actions */}
                   <td className="px-5 py-4 text-right">
                     <button
-                      onClick={() => void deleteUser(u.id)}
-                      disabled={deletingId === u.id}
+                      onClick={() => void deleteUser(u.user_id)}
+                      disabled={deletingId === u.user_id}
                       className="p-2 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all disabled:opacity-50"
                       aria-label={`Delete ${u.fullname}`}
                     >
-                      {deletingId === u.id ? (
+                      {deletingId === u.user_id ? (
                         <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />

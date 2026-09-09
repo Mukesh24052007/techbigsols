@@ -17,7 +17,7 @@ import type { PortalUserPublic } from "@/types";
 function generateUserId(existingUsers: PortalUserPublic[]): string {
   const pattern = /^tbusr(\d+)$/;
   const maxIndex = existingUsers.reduce<number>((max, u) => {
-    const match = u.id?.match(pattern);
+    const match = u.user_id?.match(pattern);
     return match ? Math.max(max, parseInt(match[1], 10)) : max;
   }, 0);
   return `tbusr${String(maxIndex + 1).padStart(3, "0")}`;
@@ -52,12 +52,12 @@ export async function POST(request: NextRequest) {
     ? ((listResult.data as { data?: PortalUserPublic[] })?.data ?? [])
     : [];
 
-  const id = generateUserId(existingUsers);
+  const user_id = generateUserId(existingUsers);
 
   const result = await backendFetch("/api/user-master", {
     method: "POST",
     authorization,
-    body: { id, ...body },
+    body: { user_id, ...body },
   });
 
   return Response.json(result.data, { status: result.status });
