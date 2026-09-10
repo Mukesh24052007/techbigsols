@@ -8,6 +8,7 @@ import { TechCoursesSection } from "@/components/home/TechCoursesSection";
 import { HardwareServicesSection } from "@/components/home/HardwareServicesSection";
 import { TravelBookingsSection } from "@/components/home/TravelBookingsSection";
 import { ImportExportSection } from "@/components/home/ImportExportSection";
+import { RealEstateSection } from "@/components/home/RealEstateSection";
 import { MeetTheTeamSection } from "@/components/home/MeetTheTeamSection";
 import { WhyChooseUsSection } from "@/components/home/WhyChooseUsSection";
 import { FeaturedProductsSection } from "@/components/home/FeaturedProductsSection";
@@ -45,6 +46,8 @@ export default function HomePage() {
       <TravelBookingsSection />
       {/* Priority 5: Global Import / Export Logistics & Shipments */}
       <ImportExportSection />
+      {/* Priority 6: Real Estate Services — Buy, Sell & Rent */}
+      <RealEstateSection />
       {/* Founder & Enterprise Leadership Profile */}
       <MeetTheTeamSection />
       {/* Why Choose Us & Dual Centers */}

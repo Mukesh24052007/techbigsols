@@ -152,6 +152,36 @@ export const servicesData: ServiceItem[] = [
     ctaLabel: "Explore Job Opportunities"
   },
   {
+    id: "real-estate",
+    title: "Real Estate Services — Buy, Sell & Rent",
+    category: "Property & Real Estate",
+    tagline: "Your Trusted Property Partner in Bangalore & Chennai",
+    description: "TechBig Solutions brings you a full-service real estate desk covering residential, commercial, and industrial property needs across Bangalore and Chennai. Whether you are buying your first home, scaling office infrastructure, leasing a warehouse, or investing in plots, our experienced property advisors guide you from initial search through legal due diligence, registration, and handover. We maintain a verified network of builders, landowners, and corporate lessors to deliver fast, transparent, and hassle-free property transactions.",
+    iconName: "Building2",
+    image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=80",
+    keyPoints: [
+      "Residential Sales & Rentals: Apartments, Villas, Independent Houses & Gated Communities",
+      "Commercial Leasing & Sales: Office Spaces, Co-working Setups, Retail Showrooms & IT Parks",
+      "Plot & Land Deals: Verified DTCP / RERA Approved Layouts with Full Encumbrance Check",
+      "End-to-End Legal Support: Sale Agreement, Title Verification, Registration & Loan Tie-Ups"
+    ],
+    features: [
+      {
+        title: "Free Property Consultation",
+        desc: "Dedicated advisors provide no-obligation site visit coordination, budget planning, and locality analysis tailored to your requirements."
+      },
+      {
+        title: "RERA-Verified Listings",
+        desc: "All properties are cross-checked against RERA and DTCP databases ensuring full legal compliance, clear titles, and zero encumbrance."
+      },
+      {
+        title: "Home Loan & Registration Support",
+        desc: "Tie-ups with leading banks and NBFCs for instant pre-approval, along with complete registration paperwork and stamp duty guidance."
+      }
+    ],
+    ctaLabel: "Enquire About Properties"
+  },
+  {
     id: "import-export",
     title: "Global Import / Export & Shipment Logistics",
     category: "International Trade & Freight",
@@ -230,5 +260,10 @@ export const faqsData: FAQItem[] = [
     category: "Travel & Darshan",
     question: "How do you book Tirupati Special Entry Darshan and Tatkal train tickets?",
     answer: "Our 24/7 booking desk handles end-to-end devotee quota bookings for ₹300 Special Entry Darshan, Seva tickets, and TTD accommodation, as well as priority Tatkal train tickets and domestic/international flights with instant confirmation."
+  },
+  {
+    category: "Real Estate",
+    question: "What types of properties do you help buy, sell, or rent?",
+    answer: "We assist with residential apartments, independent houses, commercial office spaces, plots, and warehouses across Bangalore and Chennai. Our advisors provide free consultation, legal document verification, and end-to-end transaction support for both buyers and sellers."
   }
 ];

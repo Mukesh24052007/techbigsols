@@ -9,6 +9,7 @@ import {
   GraduationCap,
   Wrench,
   Plane,
+  Building2,
   CheckCircle2,
   ArrowRight,
   Shield,
@@ -21,7 +22,8 @@ import {
   Clock,
   MapPin,
   ChevronDown,
-  Ship
+  Ship,
+  Users
 } from "lucide-react";
 
 export default function ServicesPage() {
@@ -39,6 +41,10 @@ export default function ServicesPage() {
         return <Plane className="w-5 h-5 text-emerald-600" />;
       case "Ship":
         return <Ship className="w-5 h-5 text-brand-blue" />;
+      case "Building2":
+        return <Building2 className="w-5 h-5 text-brand-blue" />;
+      case "Users":
+        return <Users className="w-5 h-5 text-brand-blue" />;
       default:
         return <Sparkles className="w-5 h-5 text-brand-blue" />;
     }
@@ -61,7 +67,7 @@ export default function ServicesPage() {
             Complete Services Guide
           </h1>
           <p className="text-base sm:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed">
-            Detailed information on our SAP E2E implementations, 10-module career academy, custom software development, doorstep hardware repair, and travel ticketing desk.
+            Detailed information on our SAP E2E implementations, 10-module career academy, custom software development, doorstep hardware repair, travel ticketing desk, and real estate property services.
           </p>
 
           {/* Quick Jump Anchor Pills */}
@@ -89,6 +95,12 @@ export default function ServicesPage() {
               className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-bold text-white transition-all"
             >
               4. Ticket & Temple Bookings
+            </a>
+            <a
+              href="#real-estate"
+              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-bold text-white transition-all"
+            >
+              5. Real Estate Services
             </a>
           </div>
         </div>
