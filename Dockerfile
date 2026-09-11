@@ -18,9 +18,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build args are injected at build time for NEXT_PUBLIC_* vars
-# (they get baked into the client bundle during next build)
-ARG NEXT_PUBLIC_API_BASE_URL
-ARG NEXT_PUBLIC_SITE_URL
+# (they get baked into the client bundle during next build).
+# Defaults point to production — override with --build-arg for staging/dev.
+ARG NEXT_PUBLIC_API_BASE_URL=https://api.techbigsolutions.in
+ARG NEXT_PUBLIC_SITE_URL=https://techbigsolutions.in
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 
