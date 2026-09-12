@@ -5,18 +5,21 @@ import Link from "next/link";
 import { useQuoteModal } from "@/context/QuoteModalContext";
 import {
   Rocket,
-  Award,
   Lightbulb,
   Handshake,
   Eye,
   CheckCircle2,
   ArrowRight,
-  ShieldCheck,
   Target,
-  Sparkles,
-  Users,
-  Building
+  Award,
 } from "lucide-react";
+import { aboutValues, aboutTeamBullets, type AboutValue } from "@/data/about";
+
+const valueIconMap: Record<string, React.ElementType> = {
+  Award,
+  Lightbulb,
+  Handshake,
+};
 
 export default function AboutPage() {
   const { openQuoteModal } = useQuoteModal();
@@ -29,7 +32,6 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary-fixed/40 border border-primary-fixed text-primary text-xs font-bold uppercase tracking-wider">
-              {/* <Sparkles className="w-3.5 h-3.5 text-brand-blue" /> */}
               <span>Our Story & Mission</span>
             </div>
 
@@ -111,38 +113,22 @@ export default function AboutPage() {
               </div>
             </div>
 
-            {/* Value 1: Excellence */}
-            <div className="col-span-1 row-span-1 bg-surface rounded-3xl p-8 border border-slate-200/80 flex flex-col justify-center items-center text-center hover:shadow-lg hover:border-brand-blue/30 transition-all duration-300 group">
-              <div className="w-14 h-14 rounded-2xl bg-amber-100 text-action-orange flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Award className="w-7 h-7" />
-              </div>
-              <h4 className="text-xl font-display font-bold text-primary mb-1.5">Excellence</h4>
-              <p className="text-xs sm:text-sm text-slate-500 max-w-xs">
-                Unyielding quality standards in every hardware deployment and line of code.
-              </p>
-            </div>
-
-            {/* Value 2: Innovation */}
-            <div className="col-span-1 row-span-1 bg-surface rounded-3xl p-8 border border-slate-200/80 flex flex-col justify-center items-center text-center hover:shadow-lg hover:border-brand-blue/30 transition-all duration-300 group">
-              <div className="w-14 h-14 rounded-2xl bg-blue-100 text-brand-blue flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Lightbulb className="w-7 h-7" />
-              </div>
-              <h4 className="text-xl font-display font-bold text-primary mb-1.5">Innovation</h4>
-              <p className="text-xs sm:text-sm text-slate-500 max-w-xs">
-                Continuous technology evolution to keep our enterprise clients ahead of the curve.
-              </p>
-            </div>
-
-            {/* Value 3: Integrity */}
-            <div className="col-span-1 row-span-1 bg-surface rounded-3xl p-8 border border-slate-200/80 flex flex-col justify-center items-center text-center hover:shadow-lg hover:border-brand-blue/30 transition-all duration-300 group">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Handshake className="w-7 h-7" />
-              </div>
-              <h4 className="text-xl font-display font-bold text-primary mb-1.5">Integrity</h4>
-              <p className="text-xs sm:text-sm text-slate-500 max-w-xs">
-                Transparent partnerships and honest SLAs built on deep professional trust.
-              </p>
-            </div>
+            {/* Value Cards */}
+            {aboutValues.map((value: AboutValue) => {
+              const IconComp = valueIconMap[value.iconName] ?? Award;
+              return (
+                <div
+                  key={value.title}
+                  className="col-span-1 row-span-1 bg-surface rounded-3xl p-8 border border-slate-200/80 flex flex-col justify-center items-center text-center hover:shadow-lg hover:border-brand-blue/30 transition-all duration-300 group"
+                >
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform ${value.iconBg}`}>
+                    <IconComp className="w-7 h-7" />
+                  </div>
+                  <h4 className="text-xl font-display font-bold text-primary mb-1.5">{value.title}</h4>
+                  <p className="text-xs sm:text-sm text-slate-500 max-w-xs">{value.description}</p>
+                </div>
+              );
+            })}
 
             {/* Vision Card */}
             <div className="col-span-1 lg:col-span-1 row-span-1 bg-surface-deep text-white rounded-3xl p-8 flex flex-col justify-between relative overflow-hidden group shadow-xl">
@@ -187,24 +173,14 @@ export default function AboutPage() {
             </p>
 
             <ul className="space-y-3.5 pt-2">
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-brand-blue flex-shrink-0 mt-0.5" />
-                <span className="text-sm sm:text-base font-medium text-slate-800">
-                  Continuous multi-vendor certifications (AWS, Microsoft, Cisco, Linux).
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-brand-blue flex-shrink-0 mt-0.5" />
-                <span className="text-sm sm:text-base font-medium text-slate-800">
-                  High-speed testing labs for enterprise stress tests and network simulations.
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-brand-blue flex-shrink-0 mt-0.5" />
-                <span className="text-sm sm:text-base font-medium text-slate-800">
-                  Sustainable, compliant, and scalable IT infrastructure practices.
-                </span>
-              </li>
+              {aboutTeamBullets.map((bullet, idx) => (
+                <li key={idx} className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-brand-blue flex-shrink-0 mt-0.5" />
+                  <span className="text-sm sm:text-base font-medium text-slate-800">
+                    {bullet.text}
+                  </span>
+                </li>
+              ))}
             </ul>
           </div>
         </div>

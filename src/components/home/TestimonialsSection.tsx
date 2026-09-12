@@ -1,47 +1,8 @@
 "use client";
 
 import React from "react";
-import { Star, Quote, CheckCircle2 } from "lucide-react";
-
-interface TestimonialItem {
-  id: string;
-  quote: string;
-  author: string;
-  role: string;
-  companyOrCategory: string;
-  rating: number;
-  tag: string;
-}
-
-const clientTestimonials: TestimonialItem[] = [
-  {
-    id: "test-sap",
-    quote: "The SAP MM and S/4 HANA training mentored by Maheshwaran sir was truly eye-opening. He teaches with real-world scenarios from Apple and Accenture projects. Thanks to their interview preparation and 100% placement support, I received an offer letter as an SAP Associate Consultant within 45 days of course completion!",
-    author: "Karthik Sundaram",
-    role: "SAP MM Consultant",
-    companyOrCategory: "Placed at Global IT Services MNC",
-    rating: 5,
-    tag: "SAP Training Graduate"
-  },
-  {
-    id: "test-hardware",
-    quote: "We signed an Annual Maintenance Contract (AMC) with TechBig Solutions for our 35 office workstations and network printers in Ambattur. Their technicians respond in under 30 minutes for doorstep support, and preventive checkups keep our downtime close to zero. Truly reliable and affordable!",
-    author: "Venkatesh Raman",
-    role: "Managing Director",
-    companyOrCategory: "Precision Components & Logistics",
-    rating: 5,
-    tag: "Corporate Hardware AMC"
-  },
-  {
-    id: "test-travel",
-    quote: "TechBig Solutions arranged our entire family pilgrimage to Tirupati including confirmed ₹300 Special Entry Darshan passes, cottage accommodation, and round-trip train tickets during heavy festival rush. Zero hassle, instant confirmation, and great customer care!",
-    author: "Deepa & Murali Krishna",
-    role: "Family Travelers",
-    companyOrCategory: "Tirupati Temple Darshan & Rail Booking",
-    rating: 5,
-    tag: "Travel & Temple Booking"
-  }
-];
+import { Star } from "lucide-react";
+import { clientTestimonials, type TestimonialItem } from "@/data/testimonials";
 
 export function TestimonialsSection() {
   return (
@@ -49,9 +10,6 @@ export function TestimonialsSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-          {/* <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-blue/10 text-brand-blue rounded-full text-xs font-bold uppercase tracking-wider">
-            Verified Feedback
-          </div> */}
           <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-primary">
             Trusted by Learners, Enterprises & Families
           </h2>
@@ -62,7 +20,7 @@ export function TestimonialsSection() {
 
         {/* Testimonials Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {clientTestimonials.map((t) => (
+          {clientTestimonials.map((t: TestimonialItem) => (
             <div
               key={t.id}
               className="bg-surface-container-low p-7 sm:p-8 rounded-3xl border border-slate-200/90 flex flex-col justify-between shadow-sm hover:shadow-xl transition-all duration-300 group hover:border-brand-blue/40"

@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import {
   Globe2,
   Ship,
-  Plane,
   Truck,
   PackageCheck,
   CreditCard,
@@ -12,160 +11,49 @@ import {
   ArrowRight,
   ShieldCheck,
   CheckCircle2,
-  Clock,
-  Warehouse,
   Boxes,
   Phone,
-  Sparkles,
-  FileCheck,
   Anchor,
 } from "lucide-react";
 import { useQuoteModal } from "@/context/QuoteModalContext";
+import {
+  importExportCapabilities,
+  shipmentGallery,
+  importExportWorkflowSteps,
+  importExportStats,
+  importExportTabs,
+  type ImportExportCapability,
+  type ShipmentGalleryItem,
+  type WorkflowStep,
+  type StatHighlight,
+  type ImportExportTabId,
+} from "@/data/importExport";
+
+const capabilityIconMap: Record<string, React.ElementType> = {
+  Globe2,
+  Ship,
+  Boxes,
+  Truck,
+  CreditCard,
+  TrendingUp,
+  PackageCheck,
+};
 
 export function ImportExportSection() {
   const { openQuoteModal } = useQuoteModal();
-  const [activeTab, setActiveTab] = useState<"all" | "shipment" | "operations" | "delivery">("all");
-
-  const coreCapabilities = [
-    {
-      icon: Globe2,
-      badge: "Global Sourcing",
-      iconColor: "text-brand-blue",
-      iconBg: "bg-brand-blue/15 border-brand-blue/30",
-      title: "Abroad Procurement & Sourcing",
-      desc: "Direct import of commercial goods, industrial machinery, IT components, and consumer commodities from partner networks across China, UAE, Southeast Asia, Europe, and the Americas.",
-      category: "shipment",
-    },
-    {
-      icon: Ship,
-      badge: "End-to-End Freight",
-      iconColor: "text-action-orange",
-      iconBg: "bg-action-orange/15 border-action-orange/30",
-      title: "Shipment Activities Management",
-      desc: "Complete overseas logistics coordination: multi-modal ocean cargo (FCL & LCL), priority air freight, route optimization, port handling, and 24/7 real-time consignment tracking.",
-      category: "shipment",
-    },
-    {
-      icon: Boxes,
-      badge: "Dock & Yard",
-      iconColor: "text-brand-blue",
-      iconBg: "bg-brand-blue/15 border-brand-blue/30",
-      title: "Precision Loading & Unloading",
-      desc: "Certified heavy crane and forklift cargo handling at dockyards and warehouses. Specialized palletization, fragile goods protection, and zero-breakage offloading standards.",
-      category: "operations",
-    },
-    {
-      icon: Truck,
-      badge: "Last-Mile Fleet",
-      iconColor: "text-action-orange",
-      iconBg: "bg-action-orange/15 border-action-orange/30",
-      title: "Doorstep Customer Delivery",
-      desc: "Reliable distribution fleet ensuring prompt dispatch from ports and central hubs directly to customer warehouses, retail points, and business premises throughout Chennai & Pan-India.",
-      category: "delivery",
-    },
-    {
-      icon: CreditCard,
-      badge: "Financial Security",
-      iconColor: "text-brand-blue",
-      iconBg: "bg-brand-blue/15 border-brand-blue/30",
-      title: "Payment Pickup & Settlement",
-      desc: "Transparent cash on delivery (COD), secure cheque collections, and real-time wire payment reconciliation with strict verification and immediate merchant account settlements.",
-      category: "delivery",
-    },
-    {
-      icon: TrendingUp,
-      badge: "Strategic Advisory",
-      iconColor: "text-action-orange",
-      iconBg: "bg-action-orange/15 border-action-orange/30",
-      title: "International Business Development",
-      desc: "Strategic cross-border trade advisory, international vendor negotiation, duty tariff optimization, customs compliance documentation (B/L, HS Codes), and export expansion.",
-      category: "operations",
-    },
-  ];
-
-  const shipmentGallery = [
-    {
-      title: "Ocean Cargo Freight",
-      subtitle: "Large-Scale Container Shipping",
-      tag: "Sea Transit",
-      image: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=800&q=80",
-      accent: "border-brand-blue/50",
-    },
-    {
-      title: "Air Express Cargo",
-      subtitle: "Time-Critical Air Shipments",
-      tag: "Air Transit",
-      image: "https://images.unsplash.com/photo-1570710891163-6d3b5c47248b?auto=format&fit=crop&w=800&q=80",
-      accent: "border-action-orange/50",
-    },
-    {
-      title: "Palletized Warehousing",
-      subtitle: "Automated Goods Storage & Safety",
-      tag: "Warehouse",
-      image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
-      accent: "border-brand-blue/50",
-    },
-    {
-      title: "Interstate Transport Fleet",
-      subtitle: "Heavy Logistics & Delivery Fleet",
-      tag: "Nationwide Transit",
-      image: "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80",
-      accent: "border-action-orange/50",
-    },
-    {
-      title: "Customer Handover & COD",
-      subtitle: "Verified Delivery & Payment Pickup",
-      tag: "Doorstep Handover",
-      image: "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=800&q=80",
-      accent: "border-brand-blue/50",
-    },
-  ];
-
-  const workflowSteps = [
-    {
-      step: "01",
-      title: "Abroad Sourcing & Deal Finalization",
-      desc: "Identify verified manufacturers abroad, evaluate product specifications, negotiate wholesale contracts, and structure international trade finance.",
-      icon: Globe2,
-    },
-    {
-      step: "02",
-      title: "Shipment & Customs Clearance",
-      desc: "Coordinate ocean or air freight charters, process bill of lading & tariff classifications, and secure fast-track port authority approvals.",
-      icon: Ship,
-    },
-    {
-      step: "03",
-      title: "Dock Loading & Unloading",
-      desc: "Supervise heavy mechanical offloading, container de-stuffing, quality inspection, and climate-safe transfer into staging warehouses.",
-      icon: Boxes,
-    },
-    {
-      step: "04",
-      title: "Delivery & Payment Pickup",
-      desc: "Execute scheduled last-mile transport directly to client doors, verify consignment integrity, and safely collect & reconcile payment.",
-      icon: PackageCheck,
-    },
-  ];
-
-  const statHighlights = [
-    { icon: Globe2, value: "15+ Nations", label: "Sourcing Corridors", color: "text-brand-blue", border: "hover:border-brand-blue/50" },
-    { icon: Ship, value: "100% Insured", label: "Sea & Air Transit", color: "text-action-orange", border: "hover:border-action-orange/50" },
-    { icon: Boxes, value: "Zero Damage", label: "Loading & Unloading", color: "text-brand-blue", border: "hover:border-brand-blue/50" },
-    { icon: PackageCheck, value: "Direct Handover", label: "Delivery & Payment", color: "text-action-orange", border: "hover:border-action-orange/50" },
-  ];
+  const [activeTab, setActiveTab] = useState<ImportExportTabId>("all");
 
   const filteredCapabilities =
     activeTab === "all"
-      ? coreCapabilities
-      : coreCapabilities.filter((c) => c.category === activeTab);
+      ? importExportCapabilities
+      : importExportCapabilities.filter((c) => c.category === activeTab);
 
   return (
     <section
       id="import-export"
       className="py-20 lg:py-28 bg-gradient-to-b from-slate-900 via-surface-deep to-slate-950 text-white relative overflow-hidden border-b border-slate-800"
     >
-      {/* Ambient background glows — brand tokens only */}
+      {/* Ambient background glows */}
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-brand-blue/20 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/3 left-10 w-80 h-80 bg-action-orange/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
@@ -175,7 +63,6 @@ export function ImportExportSection() {
         {/* ── HEADER ── */}
         <div className="text-center max-w-4xl mx-auto space-y-5">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-blue/20 border border-brand-blue/40 text-blue-200 text-xs font-bold uppercase tracking-wider">
-            {/* <Sparkles className="w-3.5 h-3.5 text-action-orange" /> */}
             <span>International Trade & Freight Logistics</span>
           </div>
 
@@ -203,8 +90,8 @@ export function ImportExportSection() {
 
         {/* ── STAT HIGHLIGHTS ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {statHighlights.map((s, i) => {
-            const Icon = s.icon;
+          {importExportStats.map((s: StatHighlight, i) => {
+            const Icon = capabilityIconMap[s.iconName] ?? Globe2;
             return (
               <div
                 key={i}
@@ -220,7 +107,6 @@ export function ImportExportSection() {
 
         {/* ── GALLERY GRID ── */}
         <div>
-          {/* Sub-header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
             <div>
               <div className="inline-flex items-center gap-1.5 text-action-orange text-xs font-bold uppercase tracking-wider mb-2">
@@ -243,7 +129,7 @@ export function ImportExportSection() {
             </button>
           </div>
 
-          {/* Asymmetric 5-card grid: 2 tall left + 3 right */}
+          {/* Asymmetric 5-card grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {/* First card — tall featured */}
             <div className="lg:col-span-1 lg:row-span-2 group relative rounded-2xl overflow-hidden border border-white/10 bg-slate-800/50 hover:border-brand-blue/50 transition-all duration-300 shadow-lg hover:shadow-2xl">
@@ -265,8 +151,8 @@ export function ImportExportSection() {
               </div>
             </div>
 
-            {/* Remaining 4 cards in a 2×2 grid */}
-            {shipmentGallery.slice(1).map((item, idx) => (
+            {/* Remaining 4 cards */}
+            {shipmentGallery.slice(1).map((item: ShipmentGalleryItem, idx) => (
               <div
                 key={idx}
                 className={`group relative rounded-2xl overflow-hidden border border-white/10 bg-slate-800/50 hover:${item.accent} transition-all duration-300 shadow-md hover:shadow-xl`}
@@ -279,7 +165,7 @@ export function ImportExportSection() {
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
-                  <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md border border-white/20 bg-black/50 text-white`}>
+                  <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md border border-white/20 bg-black/50 text-white">
                     {item.tag}
                   </span>
                 </div>
@@ -303,15 +189,10 @@ export function ImportExportSection() {
             </p>
 
             <div className="inline-flex flex-wrap justify-center gap-1 p-1 bg-white/5 border border-white/10 rounded-xl mt-4">
-              {[
-                { id: "all", label: "All Operations" },
-                { id: "shipment", label: "Shipment & Sourcing" },
-                { id: "operations", label: "Loading & Trade" },
-                { id: "delivery", label: "Delivery & Payment" },
-              ].map((tab) => (
+              {importExportTabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as "all" | "shipment" | "operations" | "delivery")}
+                  onClick={() => setActiveTab(tab.id)}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                     activeTab === tab.id
                       ? "bg-action-orange text-white shadow-sm"
@@ -325,8 +206,8 @@ export function ImportExportSection() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredCapabilities.map((item, index) => {
-              const IconComp = item.icon;
+            {filteredCapabilities.map((item: ImportExportCapability, index) => {
+              const IconComp = capabilityIconMap[item.iconName] ?? Globe2;
               return (
                 <div
                   key={index}
@@ -375,8 +256,8 @@ export function ImportExportSection() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {workflowSteps.map((step, idx) => {
-              const StepIcon = step.icon;
+            {importExportWorkflowSteps.map((step: WorkflowStep, idx) => {
+              const StepIcon = capabilityIconMap[step.iconName] ?? Globe2;
               const isOrange = idx % 2 !== 0;
               return (
                 <div
@@ -406,60 +287,7 @@ export function ImportExportSection() {
                     <span>Active Supervision</span>
                   </div>
 
-                  {idx < workflowSteps.length - 1 && (
-                    <div className="hidden lg:block absolute top-1/2 -right-2.5 w-5 h-px bg-white/20 -translate-y-1/2" />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-10 backdrop-blur-xl">
-          <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-            <span className="text-action-orange text-xs font-bold uppercase tracking-wider">
-              Step-by-Step Execution Journey
-            </span>
-            <h3 className="text-2xl sm:text-3xl font-display font-bold text-white">
-              How TechBig Manages Your Import / Export Cycle
-            </h3>
-            <p className="text-xs text-slate-400">
-              Transparent and legally certified — from foreign origin ports to final payment collection.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {workflowSteps.map((step, idx) => {
-              const StepIcon = step.icon;
-              const isOrange = idx % 2 !== 0;
-              return (
-                <div
-                  key={idx}
-                  className="relative bg-slate-900/60 border border-white/10 rounded-2xl p-6 hover:border-brand-blue/40 transition-all flex flex-col gap-4 group"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-3xl font-black text-white/15 font-mono leading-none">
-                      {step.step}
-                    </span>
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${isOrange ? "bg-action-orange/15 border-action-orange/30 text-action-orange" : "bg-brand-blue/15 border-brand-blue/30 text-brand-blue"} group-hover:scale-105 transition-transform`}>
-                      <StepIcon className="w-5 h-5" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <h5 className="text-sm font-bold text-white mb-1.5 group-hover:text-action-orange transition-colors">
-                      {step.title}
-                    </h5>
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
-                      {step.desc}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 mt-auto">
-                    <CheckCircle2 className="w-3 h-3 text-action-orange" />
-                    <span>Active Supervision</span>
-                  </div>
-
-                  {idx < workflowSteps.length - 1 && (
+                  {idx < importExportWorkflowSteps.length - 1 && (
                     <div className="hidden lg:block absolute top-1/2 -right-2.5 w-5 h-px bg-white/20 -translate-y-1/2" />
                   )}
                 </div>

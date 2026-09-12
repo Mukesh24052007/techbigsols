@@ -12,120 +12,28 @@ import {
   Cpu,
   CheckCircle2,
   ArrowRight,
-  Sparkles,
   BarChart2,
   Table2,
   Server,
   BookOpen,
-  FileText
+  FileText,
 } from "lucide-react";
 import { useQuoteModal } from "@/context/QuoteModalContext";
 import { SYLLABUS_PATHS } from "@/data/syllabuses";
+import { skillCourses, type SkillCourse } from "@/data/courses";
 
-interface Course {
-  id: string;
-  name: string;
-  price: string;
-  tagline: string;
-  topics: string[];
-  icon: React.ElementType;
-  popular?: boolean;
-}
-
-const skillCourses: Course[] = [
-  {
-    id: "ms-office",
-    name: "MS OFFICE",
-    price: "₹ 5,000",
-    tagline: "Word • Excel • PowerPoint",
-    topics: ["Advanced Formulas", "Pivot Tables", "Productivity"],
-    icon: FileSpreadsheet
-  },
-  {
-    id: "advanced-excel",
-    name: "ADVANCED EXCEL",
-    price: "On Request",
-    tagline: "Data Analysis & Dashboards",
-    topics: ["Power Query & Power Pivot", "Dynamic Charts & Macros", "VBA Automation"],
-    icon: FileSpreadsheet,
-    popular: true
-  },
-  {
-    id: "tally",
-    name: "TALLY PRIME",
-    price: "₹ 7,000",
-    tagline: "Accounting & GST",
-    topics: ["GST Filing & E-Way Bills", "Inventory", "Payroll"],
-    icon: Calculator,
-    popular: true
-  },
-  {
-    id: "visual-studio",
-    name: "VISUAL STUDIO",
-    price: "₹ 15,000",
-    tagline: ".NET & Enterprise C#",
-    topics: ["Code, Debug & Deploy", "Windows/Web Apps", "DB Integration"],
-    icon: Code
-  },
-  {
-    id: "c-cpp",
-    name: "C / C++ CODING",
-    price: "₹ 8,000",
-    tagline: "Core Programming",
-    topics: ["High-Performance Logic", "Data Structures", "Algorithms"],
-    icon: Terminal
-  },
-  {
-    id: "oracle",
-    name: "ORACLE DATABASE",
-    price: "₹ 12,000",
-    tagline: "SQL & Administration",
-    topics: ["PL/SQL Triggers", "DB Architecture", "Performance"],
-    icon: Database
-  },
-  {
-    id: "sql-server",
-    name: "SQL SERVER",
-    price: "On Request",
-    tagline: "Microsoft SQL & T-SQL",
-    topics: ["T-SQL Queries & Stored Procs", "SSRS / SSIS Reporting", "DB Admin & Tuning"],
-    icon: Server
-  },
-  {
-    id: "python",
-    name: "PYTHON DEV",
-    price: "₹ 10,000",
-    tagline: "Automation & Projects",
-    topics: ["Core OOP", "Web Scraping", "Real-World APIs"],
-    icon: Cpu,
-    popular: true
-  },
-  {
-    id: "power-bi",
-    name: "POWER BI",
-    price: "On Request",
-    tagline: "Business Intelligence",
-    topics: ["DAX Measures & KPIs", "Live Dashboards", "Power Query ETL"],
-    icon: BarChart2,
-    popular: true
-  },
-  {
-    id: "tableau",
-    name: "TABLEAU",
-    price: "On Request",
-    tagline: "Visual Analytics",
-    topics: ["Interactive Dashboards", "Calculated Fields", "Data Blending"],
-    icon: Table2
-  },
-  {
-    id: "hardware-networking",
-    name: "HARDWARE & NETWORK",
-    price: "₹ 8,000",
-    tagline: "Lab & Diagnostics",
-    topics: ["PC Assembly", "LAN/WAN Configuration", "Troubleshooting"],
-    icon: Network
-  }
-];
+const courseIconMap: Record<string, React.ElementType> = {
+  FileSpreadsheet,
+  Calculator,
+  Code,
+  Terminal,
+  Database,
+  Server,
+  Cpu,
+  BarChart2,
+  Table2,
+  Network,
+};
 
 export function TechCoursesSection() {
   const { openQuoteModal } = useQuoteModal();
@@ -136,7 +44,6 @@ export function TechCoursesSection() {
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-blue/10 text-brand-blue text-xs font-bold uppercase tracking-wider">
-            {/* <Sparkles className="w-4 h-4 text-action-orange" /> */}
             <span>Practical Learning • Industry Focused</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-primary">
@@ -152,8 +59,8 @@ export function TechCoursesSection() {
 
         {/* Courses Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-          {skillCourses.map((course) => {
-            const IconComp = course.icon;
+          {skillCourses.map((course: SkillCourse) => {
+            const IconComp = courseIconMap[course.iconName] ?? Code;
             const syllabusPath = SYLLABUS_PATHS[course.id];
 
             return (

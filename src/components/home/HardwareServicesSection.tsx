@@ -10,93 +10,21 @@ import {
   ShieldCheck,
   CheckCircle2,
   Clock,
-  MapPin,
   Phone,
   ArrowRight,
-  Sparkles,
   Zap,
-  HardDrive
+  HardDrive,
 } from "lucide-react";
 import { useQuoteModal } from "@/context/QuoteModalContext";
+import { hardwareServices, hardwareTrustPoints, type HardwareService } from "@/data/hardware";
 
-interface HardwareService {
-  id: string;
-  title: string;
-  icon: React.ElementType;
-  description: string;
-  items: string[];
-  popular?: boolean;
-}
-
-const hardwareServices: HardwareService[] = [
-  {
-    id: "laptop-service",
-    title: "LAPTOP SERVICE",
-    icon: Laptop,
-    description: "End-to-end chip-level & component diagnostics for all major brands (Dell, HP, Lenovo, Apple, Asus, Acer).",
-    items: [
-      "Screen & Display Replacement",
-      "Keyboard & Trackpad Repair",
-      "Battery Issues & Charger Port Fixes",
-      "Overheating, Thermal Paste & Fan Cleaning",
-      "Slow Performance & SSD / RAM Upgrades"
-    ],
-    popular: true
-  },
-  {
-    id: "os-software",
-    title: "OS & SOFTWARE INSTALLATION",
-    icon: HardDrive,
-    description: "Clean, licensed operating system installations, essential utility drivers, and enterprise system optimization.",
-    items: [
-      "Genuine Windows OS Installation & Activation",
-      "Official Driver Setup & Motherboard Bios Updates",
-      "Business & Productivity Software Installation",
-      "Secure Data Backup & Full System Migration",
-      "Performance Optimization & Bloatware Removal"
-    ]
-  },
-  {
-    id: "amc",
-    title: "ANNUAL MAINTENANCE CONTRACT (AMC)",
-    icon: ShieldCheck,
-    description: "Proactive, worry-free maintenance packages for offices, commercial workspaces, schools, and homes.",
-    items: [
-      "Scheduled Monthly Preventive Maintenance",
-      "Regular System Health Checkups & Diagnostics",
-      "Priority Same-Day Doorstep Support Dispatch",
-      "Significant Long-Term Cost Savings on Spares",
-      "Dedicated Enterprise SLA & Remote Assistance"
-    ],
-    popular: true
-  },
-  {
-    id: "desktop-service",
-    title: "DESKTOP SERVICE",
-    icon: Monitor,
-    description: "Complete workstation repair, custom PC builds, SMPS power unit fixes, and motherboard repairs.",
-    items: [
-      "Component-Level Hardware Troubleshooting",
-      "Motherboard & SMPS Power Supply Replacement",
-      "Malware, Ransomware & Virus Removal",
-      "Gaming / Rendering Rig Upgrades & Assembly",
-      "Comprehensive Speed & Performance Tuning"
-    ]
-  },
-  {
-    id: "printer-xerox",
-    title: "PRINTER & XEROX SERVICE",
-    icon: Printer,
-    description: "Reliable commercial and home printer repair, toner cartridge refilling, and network scanner integration.",
-    items: [
-      "Printer Installation & Wireless Network Driver Setup",
-      "Paper Jam Removal & Roller Mechanism Repair",
-      "LaserJet & Ink Tank Toner Cartridge Refilling",
-      "Head Cleaning & Print Quality Troubleshooting",
-      "Heavy-Duty Xerox & Multifunction Copier Servicing"
-    ]
-  }
-];
+const hardwareIconMap: Record<string, React.ElementType> = {
+  Laptop,
+  HardDrive,
+  ShieldCheck,
+  Monitor,
+  Printer,
+};
 
 export function HardwareServicesSection() {
   const { openQuoteModal } = useQuoteModal();
@@ -108,7 +36,6 @@ export function HardwareServicesSection() {
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 mb-14">
           <div className="space-y-3 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-wider border border-emerald-200">
-              {/* <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> */}
               <span>Reliable • Fast • Affordable</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-extrabold text-primary tracking-tight">
@@ -139,8 +66,8 @@ export function HardwareServicesSection() {
 
         {/* 5 Hardware Services Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-16">
-          {hardwareServices.map((service) => {
-            const IconComp = service.icon;
+          {hardwareServices.map((service: HardwareService) => {
+            const IconComp = hardwareIconMap[service.iconName] ?? Wrench;
             return (
               <div
                 key={service.id}
@@ -224,7 +151,7 @@ export function HardwareServicesSection() {
           </div>
         </div>
 
-        {/* Why Choose Us for Hardware (From Poster 4) */}
+        {/* Why Choose Us for Hardware */}
         <div className="bg-surface-container-low rounded-2xl border border-slate-200 p-6 sm:p-8">
           <div className="text-center max-w-xl mx-auto mb-8">
             <h4 className="text-base sm:text-lg font-display font-bold text-primary">
@@ -236,28 +163,7 @@ export function HardwareServicesSection() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            {[
-              {
-                title: "Experienced Technicians",
-                desc: "Skilled & certified hardware professionals"
-              },
-              {
-                title: "Quick Response",
-                desc: "Fast doorstep service at your convenience"
-              },
-              {
-                title: "Genuine Parts",
-                desc: "Original spares for long-lasting performance"
-              },
-              {
-                title: "Affordable Prices",
-                desc: "Transparent rates starting from ₹500 onwards"
-              },
-              {
-                title: "On-Site Support",
-                desc: "We come to you anywhere, anytime"
-              }
-            ].map((p, idx) => (
+            {hardwareTrustPoints.map((p, idx) => (
               <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200/80 text-center shadow-sm">
                 <CheckCircle2 className="w-5 h-5 text-action-orange mx-auto mb-2" />
                 <h5 className="text-xs font-bold text-slate-900 mb-1">{p.title}</h5>

@@ -10,14 +10,19 @@ import {
   MapPin,
   ChevronDown,
   Globe,
-  Sparkles,
   Laptop,
   Smartphone,
   Cpu,
   Layers,
   Calendar,
-  Code2,
 } from "lucide-react";
+import {
+  heroTechStackBadges,
+  heroCapabilities,
+  heroServiceLinks,
+  heroBranchInfo,
+  type HeroCapabilityItem,
+} from "@/data/hero";
 
 interface HeroSectionProps {
   onOpenQuoteModal: () => void;
@@ -45,21 +50,28 @@ function PngFlagIcon({ className = "w-5 h-3.5" }: { className?: string }) {
   );
 }
 
+const capabilityIconMap: Record<string, React.ElementType> = {
+  Laptop,
+  Globe,
+  Cpu,
+  Smartphone,
+};
+
+function CapabilityIcon({ iconName, className }: { iconName: string; className?: string }) {
+  const Icon = capabilityIconMap[iconName];
+  return Icon ? <Icon className={className} /> : null;
+}
+
+const capabilityIconColorMap: Record<string, string> = {
+  Laptop: "text-action-orange",
+  Globe: "text-blue-400",
+  Cpu: "text-amber-400",
+  Smartphone: "text-emerald-400",
+};
+
 export function HeroSection({ onOpenQuoteModal }: HeroSectionProps) {
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [branchOpen, setBranchOpen] = useState(false);
-
-  const techStackBadges = [
-    "C",
-    "C++",
-    "Java",
-    "Oracle",
-    "VB",
-    ".NET",
-    "SQL Server",
-    "DevOps",
-    "Azure",
-  ];
 
   return (
     <section className="relative w-full min-h-[600px] lg:min-h-[720px] flex items-center bg-surface-deep overflow-hidden">
@@ -74,12 +86,6 @@ export function HeroSection({ onOpenQuoteModal }: HeroSectionProps) {
 
           {/* Left Hero Content */}
           <div className="lg:col-span-7 space-y-6 sm:space-y-8 text-center lg:text-left">
-            {/* Top Pill */}
-            {/* <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-blue-200 text-xs font-semibold uppercase tracking-wider backdrop-blur-md">
-              <span className="w-2 h-2 rounded-full bg-action-orange animate-ping" />
-              <span>TechBig Solutions Consulting Services Limited</span>
-            </div> */}
-
             {/* Main Headline */}
             <h1 className="text-[1.85rem] leading-[1.18] sm:text-4xl md:text-5xl lg:text-6xl font-display font-extrabold text-white tracking-tight">
               SAP E2E Implementation, Cloud &amp;{" "}
@@ -103,17 +109,14 @@ export function HeroSection({ onOpenQuoteModal }: HeroSectionProps) {
                   aria-expanded={summaryExpanded}
                   className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-slate-200 hover:text-white transition-all group"
                 >
-                  {/* <Sparkles className="w-3.5 h-3.5 text-action-orange" /> */}
                   <span>{summaryExpanded ? "Hide Detailed Capabilities" : "Explore Full Capability Spectrum (Web, App, AMC)"}</span>
                   <ChevronDown
-                    className={`w-3.5 h-3.5 text-action-orange transition-transform duration-300 ${summaryExpanded ? "rotate-180" : ""
-                      }`}
+                    className={`w-3.5 h-3.5 text-action-orange transition-transform duration-300 ${summaryExpanded ? "rotate-180" : ""}`}
                   />
                 </button>
 
                 <div
-                  className={`overflow-hidden transition-all duration-500 ease-in-out ${summaryExpanded ? "max-h-[500px] opacity-100 mt-3" : "max-h-0 opacity-0"
-                    }`}
+                  className={`overflow-hidden transition-all duration-500 ease-in-out ${summaryExpanded ? "max-h-[500px] opacity-100 mt-3" : "max-h-0 opacity-0"}`}
                 >
                   <div className="p-3.5 sm:p-4 rounded-2xl bg-white/[0.04] border border-white/15 backdrop-blur-md space-y-3 text-left">
                     <p className="text-xs font-bold text-amber-200 uppercase tracking-wider flex items-center gap-1.5">
@@ -121,41 +124,18 @@ export function HeroSection({ onOpenQuoteModal }: HeroSectionProps) {
                     </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {/* Vertical 1 */}
-                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-start gap-2.5">
-                        <Laptop className="w-4 h-4 text-action-orange shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-xs font-bold text-white">System Sales &amp; Service</p>
-                          <p className="text-[11px] text-slate-300">Complete Laptop &amp; Desktop Sales, Upgrades &amp; Repairs</p>
+                      {heroCapabilities.map((cap: HeroCapabilityItem) => (
+                        <div key={cap.iconName} className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-start gap-2.5">
+                          <CapabilityIcon
+                            iconName={cap.iconName}
+                            className={`w-4 h-4 shrink-0 mt-0.5 ${capabilityIconColorMap[cap.iconName] ?? "text-white"}`}
+                          />
+                          <div>
+                            <p className="text-xs font-bold text-white">{cap.title}</p>
+                            <p className="text-[11px] text-slate-300">{cap.description}</p>
+                          </div>
                         </div>
-                      </div>
-
-                      {/* Vertical 2 */}
-                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-start gap-2.5">
-                        <Globe className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-xs font-bold text-white">Website Development</p>
-                          <p className="text-[11px] text-slate-300">High-Performance Portals, Responsive Web &amp; E-Commerce</p>
-                        </div>
-                      </div>
-
-                      {/* Vertical 3 */}
-                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-start gap-2.5">
-                        <Cpu className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-xs font-bold text-white">Hardware &amp; Networking</p>
-                          <p className="text-[11px] text-slate-300">LAN/WAN Setup, AMC Maintenance &amp; Device Architecture</p>
-                        </div>
-                      </div>
-
-                      {/* Vertical 4 */}
-                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-start gap-2.5">
-                        <Smartphone className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-xs font-bold text-white">Application &amp; Android Dev</p>
-                          <p className="text-[11px] text-slate-300">Custom Mobile, Enterprise Software &amp; Cloud Workflows</p>
-                        </div>
-                      </div>
+                      ))}
                     </div>
 
                     {/* Technologies Tag Cloud */}
@@ -164,7 +144,7 @@ export function HeroSection({ onOpenQuoteModal }: HeroSectionProps) {
                         Core Tech Stack &amp; Environments
                       </p>
                       <div className="flex flex-wrap gap-1.5">
-                        {techStackBadges.map((tech) => (
+                        {heroTechStackBadges.map((tech) => (
                           <span
                             key={tech}
                             className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/10 border border-white/10 text-slate-200"
@@ -240,10 +220,9 @@ export function HeroSection({ onOpenQuoteModal }: HeroSectionProps) {
               </div>
             </div>
 
-            {/* PNG International Branch & Chennai HQ Trust Card */}
+            {/* PNG International Branch Card */}
             <div className="pt-2">
               <div className="inline-block w-full sm:w-auto text-left">
-                {/* Mobile accordion / collapsible or desktop card */}
                 <div className="bg-white/5 border border-white/15 hover:border-white/25 rounded-2xl p-3 sm:px-4 sm:py-3 backdrop-blur-md transition-all group">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">
@@ -253,9 +232,9 @@ export function HeroSection({ onOpenQuoteModal }: HeroSectionProps) {
                           <span className="text-[10px] font-bold uppercase tracking-wider text-action-orange border border-action-orange/40 rounded-full px-2 py-0.5 bg-action-orange/10">
                             Intl Branch
                           </span>
-                          <span className="text-xs font-bold text-white">Papua New Guinea</span>
+                          <span className="text-xs font-bold text-white">{heroBranchInfo.name}</span>
                         </div>
-                        <p className="text-[11px] text-slate-300 font-medium">SHERINA MOKA</p>
+                        <p className="text-[11px] text-slate-300 font-medium">{heroBranchInfo.contactName}</p>
                       </div>
                     </div>
 
@@ -272,43 +251,21 @@ export function HeroSection({ onOpenQuoteModal }: HeroSectionProps) {
                     </button>
                   </div>
 
-                  {/* Expandable address details on mobile, always visible or toggleable */}
+                  {/* Expandable address details on mobile, always visible on desktop */}
                   <div
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${branchOpen ? "max-h-32 opacity-100 mt-2.5 pt-2.5 border-t border-white/10" : "max-h-0 sm:max-h-32 opacity-0 sm:opacity-100 sm:mt-2 sm:pt-2 sm:border-t sm:border-white/10"
-                      }`}
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${branchOpen ? "max-h-32 opacity-100 mt-2.5 pt-2.5 border-t border-white/10" : "max-h-0 sm:max-h-32 opacity-0 sm:opacity-100 sm:mt-2 sm:pt-2 sm:border-t sm:border-white/10"}`}
                   >
                     <div className="flex items-start gap-2 text-[11px] leading-snug text-slate-300">
                       <MapPin className="w-3.5 h-3.5 text-action-orange mt-0.5 shrink-0" />
                       <div>
-                        <span className="block text-slate-200">C/- St Clares Parish, Ialibu, Mendi</span>
-                        <span className="block text-slate-300">Southern Highlands Province 251, Papua New Guinea</span>
+                        <span className="block text-slate-200">{heroBranchInfo.address}</span>
+                        <span className="block text-slate-300">{heroBranchInfo.addressLine2}</span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Feature Highlights Trust Strip (Preserved & Responsive) */}
-            {/* <div className="pt-2 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto lg:mx-0 text-left">
-              <div className="p-2 rounded-xl bg-white/[0.03] border border-white/5">
-                <p className="text-base sm:text-lg font-bold font-display text-white">10 Modules</p>
-                <p className="text-[10px] sm:text-xs text-slate-400 font-medium">SAP FICO, MM, SD &amp; more</p>
-              </div>
-              <div className="p-2 rounded-xl bg-white/[0.03] border border-white/5">
-                <p className="text-base sm:text-lg font-bold font-display text-action-orange">100%</p>
-                <p className="text-[10px] sm:text-xs text-slate-400 font-medium">Placement Support</p>
-              </div>
-              <div className="p-2 rounded-xl bg-white/[0.03] border border-white/5">
-                <p className="text-base sm:text-lg font-bold font-display text-amber-300">₹500/-</p>
-                <p className="text-[10px] sm:text-xs text-slate-400 font-medium">Min Hardware Service</p>
-              </div>
-              <div className="p-2 rounded-xl bg-white/[0.03] border border-white/5">
-                <p className="text-base sm:text-lg font-bold font-display text-blue-300">24/7 Desk</p>
-                <p className="text-[10px] sm:text-xs text-slate-400 font-medium">Travel &amp; Ticket Support</p>
-              </div>
-            </div> */}
-
           </div>
 
           {/* Right Hero Visual Cards: 4 Core Verticals */}
@@ -332,69 +289,24 @@ export function HeroSection({ onOpenQuoteModal }: HeroSectionProps) {
 
               {/* Service Quick Links */}
               <div className="space-y-2 sm:space-y-2.5">
-                <a
-                  href="#sap-training"
-                  className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 transition-all group"
-                >
-                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                    <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs sm:text-xs font-bold text-white group-hover:text-amber-200 transition-colors truncate">
-                        SAP Training &amp; Global Certification
-                      </p>
-                      <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">10 Modules • 100% Placement Assistance</p>
+                {heroServiceLinks.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 transition-all group"
+                  >
+                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                      <span className={`w-2 h-2 rounded-full ${link.dotColor} shrink-0`} />
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-xs font-bold text-white group-hover:text-amber-200 transition-colors truncate">
+                          {link.title}
+                        </p>
+                        <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">{link.subtitle}</p>
+                      </div>
                     </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0 ml-1" />
-                </a>
-
-                <a
-                  href="#tech-courses"
-                  className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 transition-all group"
-                >
-                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs sm:text-xs font-bold text-white group-hover:text-amber-200 transition-colors truncate">
-                        In-Demand IT &amp; Software Skills
-                      </p>
-                      <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">MS Office, Tally, Python, C++, Oracle &amp; VS</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0 ml-1" />
-                </a>
-
-                <a
-                  href="#hardware-services"
-                  className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 transition-all group"
-                >
-                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                    <span className="w-2 h-2 rounded-full bg-action-orange shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs sm:text-xs font-bold text-white group-hover:text-amber-200 transition-colors truncate">
-                        Hardware Service &amp; AMC Support
-                      </p>
-                      <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">Laptop, Desktop, OS &amp; Printers from ₹500/-</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0 ml-1" />
-                </a>
-
-                <a
-                  href="#travel-bookings"
-                  className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 transition-all group"
-                >
-                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                    <span className="w-2 h-2 rounded-full bg-purple-400 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs sm:text-xs font-bold text-white group-hover:text-amber-200 transition-colors truncate">
-                        Ticket Bookings (Flight, Train, Tirupati)
-                      </p>
-                      <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">Tatkal Rail, Domestic/Intl Flights &amp; Darshan</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0 ml-1" />
-                </a>
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0 ml-1" />
+                  </a>
+                ))}
               </div>
 
               {/* Bottom Trust Badge */}
@@ -415,4 +327,3 @@ export function HeroSection({ onOpenQuoteModal }: HeroSectionProps) {
     </section>
   );
 }
-

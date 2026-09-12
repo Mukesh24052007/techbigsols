@@ -1,7 +1,15 @@
 "use client";
 
 import React from "react";
-import { ShieldCheck, Award, Wrench, Clock, MapPin, CheckCircle2, Phone } from "lucide-react";
+import { ShieldCheck, Award, Wrench, Clock, MapPin, Phone } from "lucide-react";
+import { whyChooseFeatures, type WhyChooseFeature } from "@/data/whyChooseUs";
+
+const featureIconMap: Record<string, React.ElementType> = {
+  Award,
+  ShieldCheck,
+  Wrench,
+  Clock,
+};
 
 export function WhyChooseUsSection() {
   return (
@@ -21,53 +29,25 @@ export function WhyChooseUsSection() {
 
           {/* Feature Cards */}
           <div className="space-y-4 pt-2">
-            <div className="flex items-start gap-4 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                <Award className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900">100% Placement Assistance & Offer Support</h4>
-                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                  Rigorous interview coaching, project resume formatting, and direct recruitment partner referrals across top MNCs.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-11 h-11 rounded-xl bg-blue-100 text-brand-blue flex items-center justify-center flex-shrink-0">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900">17+ Years Industry Pedigree</h4>
-                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                  Founded and led by certified SAP leads with hands-on enterprise architect experience at Apple, Accenture, Pfizer, and Wipro.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-11 h-11 rounded-xl bg-amber-100 text-action-orange flex items-center justify-center flex-shrink-0">
-                <Wrench className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900">Fast Doorstep Hardware Service from ₹500/-</h4>
-                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                  Certified hardware engineers come to your office or home anywhere in Chennai, using 100% genuine components with warranty.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-11 h-11 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
-                <Clock className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900">24/7 Travel & Temple Darshan Desk</h4>
-                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                  Instant confirmed flight tickets, Tatkal train booking, and guaranteed Tirupati Balaji Special Entry Darshan with accommodation.
-                </p>
-              </div>
-            </div>
+            {whyChooseFeatures.map((feature: WhyChooseFeature) => {
+              const IconComp = featureIconMap[feature.iconName] ?? ShieldCheck;
+              return (
+                <div
+                  key={feature.title}
+                  className="flex items-start gap-4 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${feature.iconBg}`}>
+                    <IconComp className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900">{feature.title}</h4>
+                    <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -88,18 +68,13 @@ export function WhyChooseUsSection() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
-                  <h4 className="text-base font-bold text-action-orange mb-1">
-                    Center
-                  </h4>
+                  <h4 className="text-base font-bold text-action-orange mb-1">Center</h4>
                   <p className="text-xs text-slate-300 leading-relaxed">
                     Industrial corridor hub catering to manufacturing, logistics ERP, and enterprise technical training.
                   </p>
                 </div>
-
                 <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
-                  <h4 className="text-base font-bold text-action-orange mb-1">
-                    Ambattur Center
-                  </h4>
+                  <h4 className="text-base font-bold text-action-orange mb-1">Ambattur Center</h4>
                   <p className="text-xs text-slate-300 leading-relaxed">
                     IT Park & commercial zone hub providing hands-on hardware care, student training & walk-in ticketing desk.
                   </p>
