@@ -13,9 +13,14 @@ import {
   CheckCircle2,
   ArrowRight,
   Sparkles,
-  Award
+  BarChart2,
+  Table2,
+  Server,
+  BookOpen,
+  FileText
 } from "lucide-react";
 import { useQuoteModal } from "@/context/QuoteModalContext";
+import { SYLLABUS_PATHS } from "@/data/syllabuses";
 
 interface Course {
   id: string;
@@ -35,6 +40,15 @@ const skillCourses: Course[] = [
     tagline: "Word • Excel • PowerPoint",
     topics: ["Advanced Formulas", "Pivot Tables", "Productivity"],
     icon: FileSpreadsheet
+  },
+  {
+    id: "advanced-excel",
+    name: "ADVANCED EXCEL",
+    price: "On Request",
+    tagline: "Data Analysis & Dashboards",
+    topics: ["Power Query & Power Pivot", "Dynamic Charts & Macros", "VBA Automation"],
+    icon: FileSpreadsheet,
+    popular: true
   },
   {
     id: "tally",
@@ -70,6 +84,14 @@ const skillCourses: Course[] = [
     icon: Database
   },
   {
+    id: "sql-server",
+    name: "SQL SERVER",
+    price: "On Request",
+    tagline: "Microsoft SQL & T-SQL",
+    topics: ["T-SQL Queries & Stored Procs", "SSRS / SSIS Reporting", "DB Admin & Tuning"],
+    icon: Server
+  },
+  {
     id: "python",
     name: "PYTHON DEV",
     price: "₹ 10,000",
@@ -77,6 +99,23 @@ const skillCourses: Course[] = [
     topics: ["Core OOP", "Web Scraping", "Real-World APIs"],
     icon: Cpu,
     popular: true
+  },
+  {
+    id: "power-bi",
+    name: "POWER BI",
+    price: "On Request",
+    tagline: "Business Intelligence",
+    topics: ["DAX Measures & KPIs", "Live Dashboards", "Power Query ETL"],
+    icon: BarChart2,
+    popular: true
+  },
+  {
+    id: "tableau",
+    name: "TABLEAU",
+    price: "On Request",
+    tagline: "Visual Analytics",
+    topics: ["Interactive Dashboards", "Calculated Fields", "Data Blending"],
+    icon: Table2
   },
   {
     id: "hardware-networking",
@@ -97,7 +136,7 @@ export function TechCoursesSection() {
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-blue/10 text-brand-blue text-xs font-bold uppercase tracking-wider">
-            <Sparkles className="w-4 h-4 text-action-orange" />
+            {/* <Sparkles className="w-4 h-4 text-action-orange" /> */}
             <span>Practical Learning • Industry Focused</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-primary">
@@ -115,6 +154,8 @@ export function TechCoursesSection() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
           {skillCourses.map((course) => {
             const IconComp = course.icon;
+            const syllabusPath = SYLLABUS_PATHS[course.id];
+
             return (
               <div
                 key={course.id}
@@ -145,16 +186,36 @@ export function TechCoursesSection() {
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-sm font-extrabold text-primary font-display">
-                    {course.price}
-                  </span>
-                  <button
-                    onClick={() => openQuoteModal(`Skill Course: ${course.name}`)}
-                    className="text-xs font-bold text-brand-blue hover:text-action-orange transition-colors"
-                  >
-                    Enroll Now →
-                  </button>
+                <div className="pt-3 border-t border-slate-100 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-extrabold text-primary font-display">
+                      {course.price}
+                    </span>
+                    <button
+                      onClick={() => openQuoteModal(`Skill Course: ${course.name}`)}
+                      className="text-xs font-bold text-brand-blue hover:text-action-orange transition-colors"
+                    >
+                      Enroll Now →
+                    </button>
+                  </div>
+
+                  {/* Syllabus button — only rendered when a PDF is available */}
+                  {syllabusPath ? (
+                    <a
+                      href={syllabusPath}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-1.5 border border-brand-blue/30 hover:border-brand-blue text-brand-blue hover:bg-brand-blue hover:text-white text-[11px] font-bold py-1.5 rounded-lg transition-all"
+                    >
+                      <FileText className="w-3 h-3" />
+                      <span>View Syllabus</span>
+                    </a>
+                  ) : (
+                    <div className="w-full flex items-center justify-center gap-1.5 border border-slate-200 text-slate-400 text-[11px] py-1.5 rounded-lg cursor-default select-none">
+                      <BookOpen className="w-3 h-3" />
+                      <span>Syllabus Coming Soon</span>
+                    </div>
+                  )}
                 </div>
               </div>
             );

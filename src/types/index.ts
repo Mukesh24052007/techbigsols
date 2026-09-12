@@ -31,6 +31,8 @@ export interface ServiceItem {
   keyPoints: string[];
   features: { title: string; desc: string }[];
   ctaLabel: string;
+  /** Optional path to a downloadable/viewable PDF syllabus in /public/Syllabus/ */
+  syllabusPath?: string;
 }
 
 export interface Testimonial {

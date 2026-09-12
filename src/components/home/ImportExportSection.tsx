@@ -175,7 +175,7 @@ export function ImportExportSection() {
         {/* ── HEADER ── */}
         <div className="text-center max-w-4xl mx-auto space-y-5">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-blue/20 border border-brand-blue/40 text-blue-200 text-xs font-bold uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5 text-action-orange" />
+            {/* <Sparkles className="w-3.5 h-3.5 text-action-orange" /> */}
             <span>International Trade & Freight Logistics</span>
           </div>
 

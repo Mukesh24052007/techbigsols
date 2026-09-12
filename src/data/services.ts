@@ -6,11 +6,11 @@ export const servicesData: ServiceItem[] = [
     title: "SAP E2E Implementation, Cloud & Certification Training",
     category: "Enterprise ERP & Career Hub",
     tagline: "10+ Years of E2E Implementation, Rollouts, Support, Integrations & 100% Placement Guarantee",
-    description: "Complete SAP enterprise solutions and flagship certification training programs. Backed by 10+ years of implementation leadership across global giants like Apple, Pfizer, Sanofi, and Wipro. We provide full lifecycle implementations (Activate, ASAP, ADM), custom enhancement solutions (ABAP, UI5, Fiori, BAPIs, IDocs), cloud deployment, and comprehensive career training across all 10 SAP modules with guaranteed placement support.",
+    description: "Complete SAP enterprise solutions and flagship certification training programs. Backed by 10+ years of implementation leadership across global giants like Apple, Pfizer, Sanofi, and Wipro. We provide full lifecycle implementations (Activate, ASAP, ADM), custom enhancement solutions (ABAP, UI5, Fiori, BAPIs, IDocs), cloud deployment, and comprehensive career training across 16 SAP modules with guaranteed placement support.",
     iconName: "Server",
     image: "https://nhxkqgwbiiaervkaeres.supabase.co/storage/v1/object/public/techbig/recruitment&hr-services.jpg",
     keyPoints: [
-      "All 10 Core SAP Modules: FICO, SD, MM, WM, EWM, GRC, BASIS, ABAP, HR, SuccessFactors",
+      "16 SAP Modules: FICO, SD, MM, WM, EWM, PP, QM, ATTP, APO, GRC, Security, BASIS, ABAP, HCM, Payroll & SuccessFactors",
       "10+ Years Experience in E2E Implementations, Global Rollouts & 24/7 L2/L3 Support",
       "SAP Cloud Deployment, S/4 HANA Migrations, Tibco & Kinaxis APS Integrations",
       "100% Placement Assistance Guarantee with Mock Interviews & Direct Offer Support"
@@ -21,8 +21,8 @@ export const servicesData: ServiceItem[] = [
         desc: "End-to-end SDLC delivery: BRD creation, Design Documents, FS/TS, Solution Development, UT/IT/UAT, and Production Go-Live support with custom release strategies."
       },
       {
-        title: "Complete 10-Module Career Curriculum",
-        desc: "Hands-on real-time project practice covering SAP FICO, SD, MM, WM, EWM, GRC, BASIS, ABAP, HR, and SuccessFactors with global certification guidance."
+        title: "Complete 16-Module Career Curriculum",
+        desc: "Hands-on real-time project practice covering all SAP modules — FICO, SD, MM, WM, EWM, PP, QM, ATTP, APO, GRC, Security, BASIS, ABAP, HCM, Payroll, and SuccessFactors."
       },
       {
         title: "SAP Cloud & 3rd Party Integrations",
@@ -36,14 +36,14 @@ export const servicesData: ServiceItem[] = [
     title: "Application, Web & In-Demand Technical Skills",
     category: "Software & Developer Academy",
     tagline: "Custom Web, Mobile & Enterprise Software with Industry-Oriented Training",
-    description: "Full-cycle application development and certified programming courses. We architect modern web applications, native Android apps, and robust enterprise software using C, C++, Java, Oracle, VB, .NET, SQL Server, DevOps, and Azure. Paired with intensive practical training courses with transparent, affordable fee structures.",
+    description: "Full-cycle application development and certified programming courses. We architect modern web applications, native Android apps, and robust enterprise software using C, C++, Java, Oracle, VB, .NET, SQL Server, DevOps, and Azure. Paired with intensive practical training courses with transparent, affordable fee structures. Download the syllabus PDF directly from each course card to review the full curriculum before enrolling.",
     iconName: "GraduationCap",
     image: "https://nhxkqgwbiiaervkaeres.supabase.co/storage/v1/object/public/techbig/training&support.jpg",
     keyPoints: [
       "Enterprise Application & Android Mobile Development",
       "Web Development, REST APIs, DevOps Pipelines & Azure Cloud Architecture",
-      "In-Demand Courses: MS Office (₹5,000), Tally Prime (₹7,000), Visual Studio (₹15,000)",
-      "Programming Labs: C/C++ (₹8,000), Oracle DB (₹12,000), Python & Hardware Networking"
+      "In-Demand Courses: MS Office (₹5,000), Tally Prime (₹7,000), Visual Studio (₹15,000), Advanced Excel, Power BI, Tableau & SQL Server",
+      "Programming Labs: C/C++ (₹8,000), Oracle DB (₹12,000), Python (₹10,000) & Hardware Networking — Syllabus PDFs available"
     ],
     features: [
       {
@@ -51,12 +51,12 @@ export const servicesData: ServiceItem[] = [
         desc: "Turnkey software solutions built with .NET, Java, C++, Python, SQL Server, and Android, paired with modern responsive web applications."
       },
       {
-        title: "In-Demand Course Tracks with Pricing",
-        desc: "Practical career-focused learning: MS Office (₹5,000), Tally (₹7,000), Visual Studio (₹15,000), C/C++ (₹8,000), and Oracle (₹12,000)."
+        title: "11 Course Tracks with Syllabus Downloads",
+        desc: "Practical career-focused learning with downloadable syllabuses: MS Office (₹5,000), Tally (₹7,000), Visual Studio (₹15,000), C/C++ (₹8,000), Oracle (₹12,000), Python (₹10,000), Advanced Excel, Power BI, Tableau, SQL Server & Hardware Networking."
       },
       {
         title: "Cloud & DevOps Architecture",
-        desc: "CI/CD automation, Docker containerization, and Microsoft Azure cloud infrastructure deployment for modern corporate environments."
+        desc: "CI/CD automation, Docker containerisation, and Microsoft Azure cloud infrastructure deployment for modern corporate environments."
       }
     ],
     ctaLabel: "Explore Software Courses"
@@ -244,12 +244,12 @@ export const faqsData: FAQItem[] = [
   {
     category: "SAP Training",
     question: "Which SAP modules do you offer and do you guarantee job placement?",
-    answer: "We offer all 10 core modules: SAP FICO, SD, MM, WM, EWM, GRC, BASIS, ABAP, HR, and SuccessFactors. Yes, our program includes 100% placement assistance with mock interviews, resume preparation, and direct offer support."
+    answer: "We offer 16 SAP modules: FICO, SD, MM, WM, EWM, PP, QM, ATTP, APO, GRC, Security, BASIS, ABAP, HCM, Payroll, and SuccessFactors. Syllabus PDFs are available for 14 of these modules — download them directly from the course card on the home page or the services page. Yes, our programme includes 100% placement assistance with mock interviews, resume preparation, and direct offer support."
   },
   {
     category: "Software Courses",
     question: "What are the course fees and durations for programming and skill classes?",
-    answer: "Course fees are completely transparent: MS Office is ₹5,000, Tally Prime is ₹7,000, C/C++ is ₹8,000, Oracle DB is ₹12,000, Visual Studio is ₹15,000, along with Python and Hardware/Networking. Most courses run 4 to 8 weeks with flexible weekend/weekday batches."
+    answer: "Course fees are fully transparent: MS Office is ₹5,000, Tally Prime is ₹7,000, C/C++ is ₹8,000, Oracle DB is ₹12,000, Visual Studio is ₹15,000, Python is ₹10,000, and Hardware & Networking is ₹8,000. Advanced Excel, Power BI, Tableau, and SQL Server fees are available on request. Most courses run 4 to 8 weeks with flexible weekend/weekday batches. Syllabus PDFs for Python, Oracle, Advanced Excel, Power BI, Tableau, and SQL Server can be downloaded directly from each course card."
   },
   {
     category: "Hardware Service",

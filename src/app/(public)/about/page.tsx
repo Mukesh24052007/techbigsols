@@ -29,7 +29,7 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary-fixed/40 border border-primary-fixed text-primary text-xs font-bold uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5 text-brand-blue" />
+              {/* <Sparkles className="w-3.5 h-3.5 text-brand-blue" /> */}
               <span>Our Story & Mission</span>
             </div>
 

@@ -179,7 +179,7 @@ export function RealEstateSection() {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-blue/10 text-brand-blue text-xs font-bold uppercase tracking-wider">
-            <Sparkles className="w-4 h-4 text-action-orange" />
+            {/* <Sparkles className="w-4 h-4 text-action-orange" /> */}
             <span>Buy · Sell · Rent · Invest</span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-extrabold text-primary">

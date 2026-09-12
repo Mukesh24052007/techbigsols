@@ -108,7 +108,7 @@ export function HardwareServicesSection() {
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 mb-14">
           <div className="space-y-3 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-wider border border-emerald-200">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+              {/* <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> */}
               <span>Reliable • Fast • Affordable</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-extrabold text-primary tracking-tight">

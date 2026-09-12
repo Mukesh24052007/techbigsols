@@ -28,7 +28,7 @@ export function MeetTheTeamSection() {
         {/* Section Pill & Title */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-blue/30 border border-brand-blue/50 text-blue-200 text-xs font-bold uppercase tracking-wider backdrop-blur-md">
-            <Sparkles className="w-4 h-4 text-action-orange" />
+            {/* <Sparkles className="w-4 h-4 text-action-orange" /> */}
             <span>Leadership & Enterprise Pedigree</span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-extrabold text-white tracking-tight">

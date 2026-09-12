@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { servicesData, faqsData } from "@/data/services";
+import { SYLLABUS_PATHS } from "@/data/syllabuses";
 import { useQuoteModal } from "@/context/QuoteModalContext";
 import {
   Server,
@@ -23,7 +24,8 @@ import {
   MapPin,
   ChevronDown,
   Ship,
-  Users
+  Users,
+  FileText
 } from "lucide-react";
 
 export default function ServicesPage() {
@@ -60,7 +62,7 @@ export default function ServicesPage() {
 
         <div className="max-w-4xl mx-auto text-center space-y-5 relative z-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-brand-blue/30 border border-brand-blue/50 text-blue-200 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md">
-            <Sparkles className="w-4 h-4 text-action-orange" />
+            {/* <Sparkles className="w-4 h-4 text-action-orange" /> */}
             <span>Comprehensive Enterprise & Career Services</span>
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-extrabold text-white tracking-tight">
@@ -222,6 +224,93 @@ export default function ServicesPage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Syllabus Downloads — shown only for SAP and Software service sections */}
+                {service.id === "sap-enterprise" && (
+                  <div className="pt-2 space-y-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-brand-blue" />
+                      Download SAP Module Syllabuses
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {[
+                        { id: "sap-fico",     label: "SAP FICO" },
+                        { id: "sap-sd",       label: "SAP SD" },
+                        { id: "sap-mm",       label: "SAP MM" },
+                        { id: "sap-wm",       label: "SAP WM" },
+                        { id: "sap-ewm",      label: "SAP EWM" },
+                        { id: "sap-pp",       label: "SAP PP" },
+                        { id: "sap-qm",       label: "SAP QM" },
+                        { id: "sap-attp",     label: "SAP ATTP" },
+                        { id: "sap-apo",      label: "SAP APO" },
+                        { id: "sap-basis",    label: "SAP BASIS" },
+                        { id: "sap-abap",     label: "SAP ABAP" },
+                        { id: "sap-hr",       label: "SAP HCM" },
+                        { id: "sap-payroll",  label: "SAP Payroll" },
+                        { id: "sap-security", label: "SAP Security" },
+                      ].map(({ id, label }) => {
+                        const path = SYLLABUS_PATHS[id];
+                        return path ? (
+                          <a
+                            key={id}
+                            href={path}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 border border-brand-blue/25 hover:border-brand-blue bg-white hover:bg-brand-blue/5 text-brand-blue text-[11px] font-bold px-3 py-2 rounded-lg transition-all"
+                          >
+                            <FileText className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{label}</span>
+                          </a>
+                        ) : (
+                          <span
+                            key={id}
+                            title="Syllabus PDF coming soon"
+                            className="flex items-center gap-1.5 border border-slate-200 text-slate-400 text-[11px] px-3 py-2 rounded-lg cursor-default"
+                          >
+                            <FileText className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{label} — Soon</span>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {service.id === "software-development" && (
+                  <div className="pt-2 space-y-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-brand-blue" />
+                      Download Course Syllabuses
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {[
+                        { id: "python",         label: "Python" },
+                        { id: "oracle",         label: "Oracle DB" },
+                        { id: "advanced-excel", label: "Advanced Excel" },
+                        { id: "power-bi",       label: "Power BI" },
+                        { id: "tableau",        label: "Tableau" },
+                        { id: "sql-server",     label: "SQL Server" },
+                      ].map(({ id, label }) => {
+                        const path = SYLLABUS_PATHS[id];
+                        return path ? (
+                          <a
+                            key={id}
+                            href={path}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 border border-brand-blue/25 hover:border-brand-blue bg-white hover:bg-brand-blue/5 text-brand-blue text-[11px] font-bold px-3 py-2 rounded-lg transition-all"
+                          >
+                            <FileText className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{label}</span>
+                          </a>
+                        ) : null;
+                      })}
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      Syllabuses for MS Office, Tally Prime, Visual Studio, C/C++ and Hardware & Networking are available on request — call or WhatsApp us.
+                    </p>
+                  </div>
+                )}
 
                 {/* Action Triggers */}
                 <div className="pt-4 flex flex-wrap items-center gap-4">

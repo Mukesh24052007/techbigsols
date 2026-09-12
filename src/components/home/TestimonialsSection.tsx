@@ -49,9 +49,9 @@ export function TestimonialsSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-blue/10 text-brand-blue rounded-full text-xs font-bold uppercase tracking-wider">
+          {/* <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-blue/10 text-brand-blue rounded-full text-xs font-bold uppercase tracking-wider">
             Verified Feedback
-          </div>
+          </div> */}
           <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-primary">
             Trusted by Learners, Enterprises & Families
           </h2>
