@@ -5,7 +5,7 @@
  * Courses WITHOUT a syllabus PDF are intentionally omitted from this map.
  * Missing PDFs to note:
  *   SAP: sap-grc, successfactors
- *   Tech: ms-office, tally, visual-studio, c-cpp, hardware-networking
+ *   Tech: c-cpp, hardware-networking
  */
 export const SYLLABUS_PATHS: Record<string, string> = {
   // ── SAP Modules ──────────────────────────────────────────────────────────
@@ -25,6 +25,11 @@ export const SYLLABUS_PATHS: Record<string, string> = {
   "sap-security":   "/Syllabus/TechBig_Solutions_SAP_S4HANA_Security_E2E_Complete_Syllabus.pdf",
 
   // ── Tech / Skill Courses ─────────────────────────────────────────────────
+  "hardware-networking": "/Syllabus/TECHBIG_SOLUTIONS_Hardware_and_Networking_Detailed_Syllabus.pdf",
+  "c-cpp": "/Syllabus/TECHBIG_SOLUTIONS_C_Cpp_Detailed_Syllabus.pdf",
+  "ms-office":      "/Syllabus/TECHBIG_Solutions_MS_Office_Detailed_Syllabus.pdf",
+  "tally":          "/Syllabus/TECHBIG_Solutions_TallyPrime_7_1_Detailed_Syllabus.pdf",
+  "visual-studio":  "/Syllabus/TECHBIG_Solutions_Visual_Studio_Complete_Syllabus.pdf",
   "python":         "/Syllabus/TechBig_Solutions_Python_Complete_E2E_Syllabus.pdf",
   "oracle":         "/Syllabus/TechBig_Solutions_Oracle_Advanced_Complete_E2E_Syllabus.pdf",
   "advanced-excel": "/Syllabus/TechBig_Solutions_Advanced_Excel_Complete_E2E_Syllabus.pdf",

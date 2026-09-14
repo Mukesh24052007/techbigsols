@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ArrowRight,
   Phone,
@@ -9,69 +9,30 @@ import {
   Rocket,
   MapPin,
   ChevronDown,
-  Globe,
-  Laptop,
-  Smartphone,
-  Cpu,
-  Layers,
   Calendar,
 } from "lucide-react";
 import {
-  heroTechStackBadges,
-  heroCapabilities,
   heroServiceLinks,
   heroBranchInfo,
-  type HeroCapabilityItem,
 } from "@/data/hero";
+import { PngFlagIcon } from "@/components/ui/PngFlagIcon";
 
 interface HeroSectionProps {
   onOpenQuoteModal: () => void;
 }
 
-function PngFlagIcon({ className = "w-5 h-3.5" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 40 30"
-      className={`${className} rounded-[3px] shadow-sm shrink-0 border border-white/20`}
-      aria-hidden="true"
-    >
-      <rect width="40" height="30" fill="#0c0d0e" />
-      <polygon points="0,0 40,0 0,30" fill="#ce1126" />
-      {/* Southern cross stars */}
-      <circle cx="28" cy="23" r="1.1" fill="#ffffff" />
-      <circle cx="28" cy="17" r="1.1" fill="#ffffff" />
-      <circle cx="24.5" cy="20.5" r="1.1" fill="#ffffff" />
-      <circle cx="31.5" cy="19.5" r="1.1" fill="#ffffff" />
-      <circle cx="29" cy="21" r="0.7" fill="#ffffff" />
-      {/* Stylized Bird of paradise */}
-      <path d="M 10 9 C 14 8 18 12 19 14 C 15 13 11 12 9 10 Z" fill="#fcd116" />
-      <circle cx="10" cy="9" r="1.5" fill="#fcd116" />
-    </svg>
-  );
-}
-
-const capabilityIconMap: Record<string, React.ElementType> = {
-  Laptop,
-  Globe,
-  Cpu,
-  Smartphone,
-};
-
-function CapabilityIcon({ iconName, className }: { iconName: string; className?: string }) {
-  const Icon = capabilityIconMap[iconName];
-  return Icon ? <Icon className={className} /> : null;
-}
-
-const capabilityIconColorMap: Record<string, string> = {
-  Laptop: "text-action-orange",
-  Globe: "text-blue-400",
-  Cpu: "text-amber-400",
-  Smartphone: "text-emerald-400",
-};
-
 export function HeroSection({ onOpenQuoteModal }: HeroSectionProps) {
-  const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [branchOpen, setBranchOpen] = useState(false);
+  const [isIntlHighlighted, setIsIntlHighlighted] = useState(false);
+
+  useEffect(() => {
+    const handleHighlight = (e: Event) => {
+      const customEvent = e as CustomEvent<boolean>;
+      setIsIntlHighlighted(Boolean(customEvent.detail));
+    };
+    window.addEventListener("highlight-intl-branch", handleHighlight);
+    return () => window.removeEventListener("highlight-intl-branch", handleHighlight);
+  }, []);
 
   return (
     <section className="relative w-full min-h-[600px] lg:min-h-[720px] flex items-center bg-surface-deep overflow-hidden">
@@ -85,7 +46,7 @@ export function HeroSection({ onOpenQuoteModal }: HeroSectionProps) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
 
           {/* Left Hero Content */}
-          <div className="lg:col-span-7 space-y-6 sm:space-y-8 text-center lg:text-left">
+          <div className="lg:col-span-7 space-y-6 sm:space-y-7 text-center lg:text-left">
             {/* Main Headline */}
             <h1 className="text-[1.85rem] leading-[1.18] sm:text-4xl md:text-5xl lg:text-6xl font-display font-extrabold text-white tracking-tight">
               SAP E2E Implementation, Cloud &amp;{" "}
@@ -94,69 +55,11 @@ export function HeroSection({ onOpenQuoteModal }: HeroSectionProps) {
               </span>
             </h1>
 
-            {/* Subheading & Creative Expandable Scope */}
-            <div className="max-w-2xl mx-auto lg:mx-0 space-y-3.5">
-              {/* Primary Tagline */}
-              <p className="text-sm sm:text-base lg:text-lg text-slate-300 font-normal leading-relaxed">
-                Backed by <strong className="text-white font-semibold">10+ years of experience</strong> in SAP E2E implementation projects, global rollouts, support, and SAP Cloud integrations.
+            {/* Subheading & Unified Enterprise Context */}
+            <div className="max-w-2xl mx-auto lg:mx-0">
+              <p className="text-sm sm:text-base lg:text-[1.05rem] text-slate-300 font-normal leading-relaxed">
+                Backed by <strong className="text-white font-semibold">10+ years of experience</strong> in SAP E2E implementation projects, global rollouts, support, and SAP Cloud integrations, we deliver comprehensive enterprise solutions — from full-stack web and mobile application engineering across modern environments (Java, .NET, Oracle, Azure &amp; DevOps) to complete system sales, hardware networking architecture, and proactive AMC maintenance.
               </p>
-
-              {/* Collapsible Full Capabilities Showcase */}
-              <div className="pt-1">
-                <button
-                  type="button"
-                  onClick={() => setSummaryExpanded((v) => !v)}
-                  aria-expanded={summaryExpanded}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-slate-200 hover:text-white transition-all group"
-                >
-                  <span>{summaryExpanded ? "Hide Detailed Capabilities" : "Explore Full Capability Spectrum (Web, App, AMC)"}</span>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 text-action-orange transition-transform duration-300 ${summaryExpanded ? "rotate-180" : ""}`}
-                  />
-                </button>
-
-                <div
-                  className={`overflow-hidden transition-all duration-500 ease-in-out ${summaryExpanded ? "max-h-[500px] opacity-100 mt-3" : "max-h-0 opacity-0"}`}
-                >
-                  <div className="p-3.5 sm:p-4 rounded-2xl bg-white/[0.04] border border-white/15 backdrop-blur-md space-y-3 text-left">
-                    <p className="text-xs font-bold text-amber-200 uppercase tracking-wider flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5" /> Comprehensive Enterprise Solutions
-                    </p>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {heroCapabilities.map((cap: HeroCapabilityItem) => (
-                        <div key={cap.iconName} className="p-2.5 rounded-xl bg-white/5 border border-white/10 flex items-start gap-2.5">
-                          <CapabilityIcon
-                            iconName={cap.iconName}
-                            className={`w-4 h-4 shrink-0 mt-0.5 ${capabilityIconColorMap[cap.iconName] ?? "text-white"}`}
-                          />
-                          <div>
-                            <p className="text-xs font-bold text-white">{cap.title}</p>
-                            <p className="text-[11px] text-slate-300">{cap.description}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Technologies Tag Cloud */}
-                    <div className="pt-2 border-t border-white/10">
-                      <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1.5">
-                        Core Tech Stack &amp; Environments
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {heroTechStackBadges.map((tech) => (
-                          <span
-                            key={tech}
-                            className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/10 border border-white/10 text-slate-200"
-                          >
-                            {tech}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* CTAs: Mobile-Optimized Grid vs Desktop Row */}
@@ -220,16 +123,29 @@ export function HeroSection({ onOpenQuoteModal }: HeroSectionProps) {
               </div>
             </div>
 
-            {/* PNG International Branch Card */}
+            {/* PNG International Branch Card with Interactive Highlight */}
             <div className="pt-2">
               <div className="inline-block w-full sm:w-auto text-left">
-                <div className="bg-white/5 border border-white/15 hover:border-white/25 rounded-2xl p-3 sm:px-4 sm:py-3 backdrop-blur-md transition-all group">
+                <div
+                  id="hero-intl-branch"
+                  className={`border rounded-2xl p-3 sm:px-4 sm:py-3 backdrop-blur-md transition-all duration-300 group ${
+                    isIntlHighlighted
+                      ? "border-action-orange ring-2 sm:ring-4 ring-action-orange/60 bg-white/15 shadow-[0_0_35px_rgba(255,107,0,0.55)] scale-[1.03] -translate-y-1"
+                      : "bg-white/5 border-white/15 hover:border-white/25"
+                  }`}
+                >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">
                       <PngFlagIcon className="w-6 h-4 sm:w-7 sm:h-5" />
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-action-orange border border-action-orange/40 rounded-full px-2 py-0.5 bg-action-orange/10">
+                          <span
+                            className={`text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 transition-all ${
+                              isIntlHighlighted
+                                ? "text-white bg-action-orange border border-action-orange"
+                                : "text-action-orange border border-action-orange/40 bg-action-orange/10"
+                            }`}
+                          >
                             Intl Branch
                           </span>
                           <span className="text-xs font-bold text-white">{heroBranchInfo.name}</span>
@@ -244,16 +160,20 @@ export function HeroSection({ onOpenQuoteModal }: HeroSectionProps) {
                       className="sm:hidden text-xs text-action-orange hover:text-amber-300 font-semibold inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 transition-colors"
                       aria-label="Toggle international branch address details"
                     >
-                      <span className="hidden xs:inline">{branchOpen ? "Hide" : "Address"}</span>
+                      <span className="hidden xs:inline">{branchOpen || isIntlHighlighted ? "Hide" : "Address"}</span>
                       <ChevronDown
-                        className={`w-3.5 h-3.5 transition-transform duration-300 ${branchOpen ? "rotate-180" : ""}`}
+                        className={`w-3.5 h-3.5 transition-transform duration-300 ${branchOpen || isIntlHighlighted ? "rotate-180" : ""}`}
                       />
                     </button>
                   </div>
 
                   {/* Expandable address details on mobile, always visible on desktop */}
                   <div
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${branchOpen ? "max-h-32 opacity-100 mt-2.5 pt-2.5 border-t border-white/10" : "max-h-0 sm:max-h-32 opacity-0 sm:opacity-100 sm:mt-2 sm:pt-2 sm:border-t sm:border-white/10"}`}
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                      branchOpen || isIntlHighlighted
+                        ? "max-h-32 opacity-100 mt-2.5 pt-2.5 border-t border-white/10"
+                        : "max-h-0 sm:max-h-32 opacity-0 sm:opacity-100 sm:mt-2 sm:pt-2 sm:border-t sm:border-white/10"
+                    }`}
                   >
                     <div className="flex items-start gap-2 text-[11px] leading-snug text-slate-300">
                       <MapPin className="w-3.5 h-3.5 text-action-orange mt-0.5 shrink-0" />
@@ -268,15 +188,15 @@ export function HeroSection({ onOpenQuoteModal }: HeroSectionProps) {
             </div>
           </div>
 
-          {/* Right Hero Visual Cards: 4 Core Verticals */}
+          {/* Right Hero Visual Cards: Core Verticals */}
           <div className="lg:col-span-5 flex justify-center items-center relative w-full mt-4 lg:mt-0">
-            <div className="relative w-full max-w-md bg-gradient-to-tr from-white/10 to-white/5 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/20 shadow-2xl backdrop-blur-xl space-y-3.5 sm:space-y-4">
+            <div className="relative w-full max-w-md bg-gradient-to-tr from-white/10 to-white/5 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-white/20 shadow-2xl backdrop-blur-xl space-y-3 sm:space-y-3.5">
 
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-white/10 pb-3 sm:pb-4">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <div>
                   <span className="text-[10px] sm:text-[11px] font-bold text-action-orange uppercase tracking-wider">
-                    Our 4 Core Verticals
+                    Our Core Verticals
                   </span>
                   <h3 className="text-base sm:text-lg font-display font-bold text-white">
                     One Destination For All Needs
@@ -287,18 +207,18 @@ export function HeroSection({ onOpenQuoteModal }: HeroSectionProps) {
                 </div>
               </div>
 
-              {/* Service Quick Links */}
-              <div className="space-y-2 sm:space-y-2.5">
+              {/* Service Quick Links (Optimized with Import/Export, Real Estate, Featured Products) */}
+              <div className="space-y-2">
                 {heroServiceLinks.map((link) => (
                   <a
                     key={link.href}
                     href={link.href}
-                    className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 transition-all group"
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 transition-all group"
                   >
                     <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                       <span className={`w-2 h-2 rounded-full ${link.dotColor} shrink-0`} />
                       <div className="min-w-0">
-                        <p className="text-xs sm:text-xs font-bold text-white group-hover:text-amber-200 transition-colors truncate">
+                        <p className="text-xs font-bold text-white group-hover:text-amber-200 transition-colors truncate">
                           {link.title}
                         </p>
                         <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">{link.subtitle}</p>

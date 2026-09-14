@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
   Code,
@@ -12,6 +12,8 @@ import {
   Cpu,
   CheckCircle2,
   ArrowRight,
+  ChevronDown,
+  ChevronUp,
   BarChart2,
   Table2,
   Server,
@@ -21,6 +23,8 @@ import {
 import { useQuoteModal } from "@/context/QuoteModalContext";
 import { SYLLABUS_PATHS } from "@/data/syllabuses";
 import { skillCourses, type SkillCourse } from "@/data/courses";
+
+const INITIAL_VISIBLE = 8;
 
 const courseIconMap: Record<string, React.ElementType> = {
   FileSpreadsheet,
@@ -35,8 +39,77 @@ const courseIconMap: Record<string, React.ElementType> = {
   Network,
 };
 
+function CourseCard({
+  course,
+  onEnroll,
+}: {
+  course: SkillCourse;
+  onEnroll: (name: string) => void;
+}) {
+  const IconComp = courseIconMap[course.iconName] ?? Code;
+  const syllabusPath = SYLLABUS_PATHS[course.id];
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between group hover:border-brand-blue/40 relative">
+      {course.popular && (
+        <span className="absolute top-3 right-3 bg-action-orange text-white text-[9px] font-bold uppercase px-2 py-0.5 rounded-full">
+          Popular
+        </span>
+      )}
+      <div>
+        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-brand-blue mb-3 group-hover:bg-brand-blue group-hover:text-white transition-colors">
+          <IconComp className="w-5 h-5" />
+        </div>
+        <h3 className="text-base font-display font-bold text-primary">{course.name}</h3>
+        <p className="text-[11px] text-slate-500 font-medium mb-3">{course.tagline}</p>
+        <div className="space-y-1.5 border-t border-slate-100 pt-3 mb-4">
+          {course.topics.map((t, idx) => (
+            <p key={idx} className="text-xs text-slate-600 flex items-center gap-1.5">
+              <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+              <span>{t}</span>
+            </p>
+          ))}
+        </div>
+      </div>
+
+      <div className="pt-3 border-t border-slate-100 space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-extrabold text-primary font-display">{course.price}</span>
+          <button
+            onClick={() => onEnroll(course.name)}
+            className="text-xs font-bold text-brand-blue hover:text-action-orange transition-colors"
+          >
+            Enroll Now →
+          </button>
+        </div>
+
+        {syllabusPath ? (
+          <a
+            href={syllabusPath}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center justify-center gap-1.5 border border-brand-blue/30 hover:border-brand-blue text-brand-blue hover:bg-brand-blue hover:text-white text-[11px] font-bold py-1.5 rounded-lg transition-all"
+          >
+            <FileText className="w-3 h-3" />
+            <span>View Syllabus</span>
+          </a>
+        ) : (
+          <div className="w-full flex items-center justify-center gap-1.5 border border-slate-200 text-slate-400 text-[11px] py-1.5 rounded-lg cursor-default select-none">
+            <BookOpen className="w-3 h-3" />
+            <span>Syllabus Coming Soon</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function TechCoursesSection() {
   const { openQuoteModal } = useQuoteModal();
+  const [expanded, setExpanded] = useState(false);
+
+  const visibleCourses = expanded ? skillCourses : skillCourses.slice(0, INITIAL_VISIBLE);
+  const hiddenCount = skillCourses.length - INITIAL_VISIBLE;
 
   return (
     <section className="py-20 bg-surface-container-low border-y border-slate-200" id="tech-courses">
@@ -53,81 +126,43 @@ export function TechCoursesSection() {
             </span>
           </h2>
           <p className="text-sm sm:text-base text-slate-600">
-            Certified technical training with real-time projects, live coding practice, transparent fees, and 100% placement support.
+            Certified technical training with real-time projects, live coding practice, transparent
+            fees, and 100% placement support.
           </p>
         </div>
 
         {/* Courses Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-          {skillCourses.map((course: SkillCourse) => {
-            const IconComp = courseIconMap[course.iconName] ?? Code;
-            const syllabusPath = SYLLABUS_PATHS[course.id];
-
-            return (
-              <div
-                key={course.id}
-                className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between group hover:border-brand-blue/40 relative"
-              >
-                {course.popular && (
-                  <span className="absolute top-3 right-3 bg-action-orange text-white text-[9px] font-bold uppercase px-2 py-0.5 rounded-full">
-                    Popular
-                  </span>
-                )}
-                <div>
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-brand-blue mb-3 group-hover:bg-brand-blue group-hover:text-white transition-colors">
-                    <IconComp className="w-5 h-5" />
-                  </div>
-                  <h3 className="text-base font-display font-bold text-primary">
-                    {course.name}
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-medium mb-3">
-                    {course.tagline}
-                  </p>
-                  <div className="space-y-1.5 border-t border-slate-100 pt-3 mb-4">
-                    {course.topics.map((t, idx) => (
-                      <p key={idx} className="text-xs text-slate-600 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
-                        <span>{t}</span>
-                      </p>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-slate-100 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-extrabold text-primary font-display">
-                      {course.price}
-                    </span>
-                    <button
-                      onClick={() => openQuoteModal(`Skill Course: ${course.name}`)}
-                      className="text-xs font-bold text-brand-blue hover:text-action-orange transition-colors"
-                    >
-                      Enroll Now →
-                    </button>
-                  </div>
-
-                  {/* Syllabus button — only rendered when a PDF is available */}
-                  {syllabusPath ? (
-                    <a
-                      href={syllabusPath}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full flex items-center justify-center gap-1.5 border border-brand-blue/30 hover:border-brand-blue text-brand-blue hover:bg-brand-blue hover:text-white text-[11px] font-bold py-1.5 rounded-lg transition-all"
-                    >
-                      <FileText className="w-3 h-3" />
-                      <span>View Syllabus</span>
-                    </a>
-                  ) : (
-                    <div className="w-full flex items-center justify-center gap-1.5 border border-slate-200 text-slate-400 text-[11px] py-1.5 rounded-lg cursor-default select-none">
-                      <BookOpen className="w-3 h-3" />
-                      <span>Syllabus Coming Soon</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {visibleCourses.map((course: SkillCourse) => (
+            <CourseCard
+              key={course.id}
+              course={course}
+              onEnroll={(name) => openQuoteModal(`Skill Course: ${name}`)}
+            />
+          ))}
         </div>
+
+        {/* View More / View Less toggle */}
+        {skillCourses.length > INITIAL_VISIBLE && (
+          <div className="flex justify-center mb-10">
+            <button
+              onClick={() => setExpanded((prev) => !prev)}
+              className="inline-flex items-center gap-2 border border-brand-blue/40 hover:border-brand-blue text-brand-blue hover:bg-brand-blue hover:text-white text-sm font-bold px-6 py-2.5 rounded-xl transition-all active:scale-95"
+            >
+              {expanded ? (
+                <>
+                  <ChevronUp className="w-4 h-4" />
+                  <span>Show Less</span>
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-4 h-4" />
+                  <span>View {hiddenCount} More Courses</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Action Link to Complete Services Page */}
         <div className="text-center">
