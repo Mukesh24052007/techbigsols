@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id          String   @id // e.g. "tbusr001", "emp-01"
+  userId      String?  @unique // linked to PortalUser id
+  name        String
+  email       String   @unique
+  department  String
+  designation String?
+  avatar      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  portalUser  PortalUser?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  credentials BiometricCredential[]
+  attendance  AttendanceRecord[]
+  leaves      Leave[]
+}
+
+model BiometricCredential {
+  id          String   @id // base64url WebAuthn credential ID
+  employeeId  String
+  publicKey   String   // base64url encoded credential public key
+  counter     BigInt   @default(0)
+  deviceType  String?  @default("platform")
+  backedUp    Boolean  @default(false)
+  transports  String?  // JSON array string
+  createdAt   DateTime @default(now())
+
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model AttendanceRecord {
+  id             String    @id @default(cuid())
+  employeeId     String
+  date           String    // YYYY-MM-DD in Asia/Kolkata
+  checkIn        DateTime  @default(now())
+  checkOut       DateTime?
+  method         String    @default("Biometric") // "Face" | "Fingerprint" | "Biometric"
+  status         String    @default("PRESENT")   // "PRESENT" | "LATE" | "ABSENT" | "LEAVE"
+  credentialId   String?
+  ip             String?
+  lat            Float?
+  lng            Float?
+  distanceMeters Float?
+  createdAt      DateTime  @default(now())
+
+  employee       Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, date])
+}
+
+model Leave {
+  id          String   @id @default(cuid())
+  employeeId  String
+  fromDate    String   // YYYY-MM-DD
+  toDate      String   // YYYY-MM-DD
+  reason      String?
+  status      String   @default("APPROVED") // PENDING | APPROVED | REJECTED
+  createdAt   DateTime @default(now())
+
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String
+  target      String
+  details     String?
+  performedBy String
+  ip          String?
+  createdAt   DateTime @default(now())
+}
+
+model PortalUser {
+  id           String    @id // tbusr001, tbusr002, ...
+  email        String    @unique
+  fullname     String
+  passwordHash String
+  moduleAccess String    @default("[]") // JSON string array
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  employee     Employee?
+}
