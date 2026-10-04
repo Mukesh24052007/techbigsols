@@ -4,7 +4,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 import { TOKEN_KEY } from "@/lib/axios";
 import { MODULE_KEYS, MODULE_LABELS, type ModuleKey, type PortalUserPublic, type ModulePermissions } from "@/types";
-import { UserPlus, Trash2, ShieldCheck, ShieldOff, RefreshCw, X, Eye, EyeOff, CheckSquare, Square } from "lucide-react";
+import { UserPlus, Trash2, ShieldCheck, ShieldOff, RefreshCw, X, Eye, EyeOff, CheckSquare, Square, ScanFace } from "lucide-react";
+
 
 // ── helpers ──────────────────────────────────────────────────────────────
 
@@ -254,6 +255,7 @@ export default function UserMasterPage() {
   const [showModal, setShowModal] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [enrollingUser, setEnrollingUser] = useState<PortalUserPublic | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
@@ -372,6 +374,7 @@ export default function UserMasterPage() {
                 <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">User</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden sm:table-cell">Modules</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Created</th>
+                <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Face ID</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                 <th className="px-5 py-3.5" />
               </tr>
@@ -417,6 +420,21 @@ export default function UserMasterPage() {
                     {u.createdAt
                       ? new Date(u.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
                       : "—"}
+                  </td>
+                  {/* Face ID Status & Enrolment */}
+                  <td className="px-5 py-4 hidden lg:table-cell">
+                    <button
+                      type="button"
+                      onClick={() => setEnrollingUser(u)}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                        u.hasFaceTemplate
+                          ? "bg-blue-50 text-[#0a4bb3] border border-blue-200 hover:bg-blue-100"
+                          : "bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      <ScanFace className={`w-3.5 h-3.5 ${u.hasFaceTemplate ? "text-[#0a4bb3]" : "text-slate-400"}`} />
+                      {u.hasFaceTemplate ? "Enrolled" : "Enrol Face"}
+                    </button>
                   </td>
                   {/* Status */}
                   <td className="px-5 py-4">
@@ -469,6 +487,29 @@ export default function UserMasterPage() {
 
       {showModal && (
         <CreateUserModal onClose={() => setShowModal(false)} onCreated={fetchUsers} />
+      )}
+
+      {enrollingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Face Enrolment</h3>
+            <p className="text-sm text-slate-600 mb-4">
+              Enrol face biometric descriptors for <span className="font-semibold text-slate-800">{enrollingUser.fullname}</span> ({enrollingUser.user_id}).
+            </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-800 mb-6">
+              Camera enrolment module is preparing for Phase 1.
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setEnrollingUser(null)}
+                className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
