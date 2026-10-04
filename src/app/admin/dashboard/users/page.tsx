@@ -5,9 +5,15 @@ import { useAdminAuth } from "@/context/AdminAuthContext";
 import { TOKEN_KEY } from "@/lib/axios";
 import { MODULE_KEYS, MODULE_LABELS, type ModuleKey, type PortalUserPublic, type ModulePermissions } from "@/types";
 import { UserPlus, Trash2, ShieldCheck, ShieldOff, RefreshCw, X, Eye, EyeOff, CheckSquare, Square, ScanFace } from "lucide-react";
+import dynamic from "next/dynamic";
 
-
-// ── helpers ──────────────────────────────────────────────────────────────
+const AdminFaceEnrolmentModal = dynamic(
+  () =>
+    import("@/components/admin/AdminFaceEnrolmentModal").then(
+      (m) => m.AdminFaceEnrolmentModal
+    ),
+  { ssr: false }
+);
 
 function authHeaders() {
   const token = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : "";
@@ -490,26 +496,17 @@ export default function UserMasterPage() {
       )}
 
       {enrollingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
-            <h3 className="text-lg font-bold text-slate-900 mb-2">Face Enrolment</h3>
-            <p className="text-sm text-slate-600 mb-4">
-              Enrol face biometric descriptors for <span className="font-semibold text-slate-800">{enrollingUser.fullname}</span> ({enrollingUser.user_id}).
-            </p>
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-800 mb-6">
-              Camera enrolment module is preparing for Phase 1.
-            </div>
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setEnrollingUser(null)}
-                className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+        <AdminFaceEnrolmentModal
+          employee={{
+            user_id: enrollingUser.user_id,
+            fullname: enrollingUser.fullname,
+            email: enrollingUser.email,
+          }}
+          onClose={() => setEnrollingUser(null)}
+          onSuccess={() => {
+            void fetchUsers();
+          }}
+        />
       )}
     </div>
   );
