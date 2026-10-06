@@ -1,0 +1,16 @@
+{
+  "name": "TechBigSolutions Attendance",
+  "short_name": "TBS Attend",
+  "description": "Face-ID attendance with GPS tracking for TechBigSolutions",
+  "start_url": "/user/attendance",
+  "display": "standalone",
+  "background_color": "#031530",
+  "theme_color": "#0a4bb3",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

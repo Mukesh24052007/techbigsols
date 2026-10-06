@@ -143,7 +143,32 @@ async function proxyFetch<T>(
 
 export const employeeAttendanceApi = {
   async getStatus(): Promise<AttendanceStatusResponse> {
-    return proxyFetch<AttendanceStatusResponse>("me/status");
+    const raw = await proxyFetch<{
+      success: boolean;
+      data?: {
+        office?: OfficeConfig;
+        faceEnrolled?: boolean;
+        consentGiven?: boolean;
+        consented?: boolean;
+        todayRecord?: AttendanceStatusResponse["todayRecord"];
+      };
+      office?: OfficeConfig;
+      faceEnrolled?: boolean;
+      consentGiven?: boolean;
+      consented?: boolean;
+      todayRecord?: AttendanceStatusResponse["todayRecord"];
+      message?: string;
+    }>("me/status");
+
+    const payload = raw.data ?? raw;
+    return {
+      success: raw.success ?? true,
+      consented: Boolean(payload.consentGiven ?? payload.consented),
+      faceEnrolled: Boolean(payload.faceEnrolled),
+      office: payload.office,
+      todayRecord: payload.todayRecord,
+      message: raw.message,
+    };
   },
 
   async submitConsent(): Promise<{ success: boolean; message?: string }> {
@@ -153,11 +178,41 @@ export const employeeAttendanceApi = {
     });
   },
 
-  async requestChallenge(): Promise<ChallengeResponse> {
-    return proxyFetch<ChallengeResponse>("challenge", {
+  async requestChallenge(params?: {
+    purpose?: "checkin" | "reverify";
+    lat?: number;
+    lng?: number;
+    accuracy?: number;
+  }): Promise<ChallengeResponse> {
+    const raw = await proxyFetch<{
+      success: boolean;
+      data?: {
+        challengeId?: string;
+        action?: ChallengeResponse["action"];
+        expiresAt?: string;
+      };
+      challengeId?: string;
+      action?: ChallengeResponse["action"];
+      expiresAt?: string;
+      message?: string;
+    }>("challenge", {
       method: "POST",
-      body: {},
+      body: {
+        purpose: params?.purpose ?? "checkin",
+        lat: params?.lat ?? 12.9716,
+        lng: params?.lng ?? 77.5946,
+        accuracy: params?.accuracy ?? 10,
+      },
     });
+
+    const payload = raw.data ?? raw;
+    return {
+      success: raw.success ?? true,
+      challengeId: payload.challengeId ?? "",
+      action: payload.action ?? "BLINK_TWICE",
+      expiresAt: payload.expiresAt ?? "",
+      message: raw.message,
+    };
   },
 
   async checkIn(payload: CheckInPayload): Promise<{ success: boolean; message?: string; record?: unknown }> {

@@ -17,6 +17,8 @@ const RAW_USER_SECRET =
   "tbs-user-secret-key-2026";
 const USER_SECRET = new TextEncoder().encode(RAW_USER_SECRET);
 
+import { MODULE_KEYS, type ModulePermissions } from "@/types";
+
 export async function GET(request: NextRequest) {
   const token = request.cookies.get(COOKIE_NAME)?.value;
 
@@ -35,10 +37,42 @@ export async function GET(request: NextRequest) {
 
   if (result.ok) {
     const payload = result.data as Record<string, unknown>;
-    const user =
+    const rawUser = (
       (payload.user as Record<string, unknown>) ??
       (payload.data as Record<string, unknown>) ??
-      payload;
+      payload
+    ) as Record<string, unknown>;
+
+    let parsedModules: string[] = [];
+    if (Array.isArray(rawUser.moduleAccess)) {
+      parsedModules = rawUser.moduleAccess.map(String);
+    } else if (typeof rawUser.moduleAccess === "string") {
+      try {
+        parsedModules = JSON.parse(rawUser.moduleAccess);
+      } catch {
+        parsedModules = [];
+      }
+    }
+
+    const permissions: ModulePermissions = Object.fromEntries(
+      MODULE_KEYS.map((k) => [
+        k,
+        (rawUser.permissions && typeof rawUser.permissions === "object" && (rawUser.permissions as Record<string, boolean>)[k] === true) ||
+        parsedModules.some((m) =>
+          m.toLowerCase().replace(/[\s_-]/g, "") === k.toLowerCase().replace(/[\s_-]/g, "") ||
+          m.toLowerCase().includes(k.toLowerCase())
+        ) ||
+        k === "attendance",
+      ])
+    ) as ModulePermissions;
+
+    const user = {
+      userId: String(rawUser.userId ?? rawUser.user_id ?? rawUser.id ?? ""),
+      email: String(rawUser.email ?? ""),
+      name: String(rawUser.name ?? rawUser.fullname ?? rawUser.fullName ?? "Portal User"),
+      permissions,
+    };
+
     return Response.json({ success: true, user }, { status: 200 });
   }
 

@@ -16,9 +16,9 @@ const COOKIE_NAME = "tbs_user_token";
 const COOKIE_MAX_AGE = 60 * 60 * 8; // 8 hours
 
 const RAW_USER_SECRET =
-  process.env.USER_JWT_SECRET ||
   process.env.JWT_SECRET ||
-  "tbs-user-secret-key-2026";
+  process.env.USER_JWT_SECRET ||
+  "change_this_to_a_long_random_secret";
 const USER_SECRET = new TextEncoder().encode(RAW_USER_SECRET);
 
 export async function POST(request: NextRequest) {
@@ -36,10 +36,43 @@ export async function POST(request: NextRequest) {
 
   if (result.ok) {
     const payload = result.data as Record<string, unknown>;
+    const rawUser = ((payload.user ?? payload.data ?? {}) as Record<string, unknown>);
+    
+    // Parse moduleAccess array
+    let parsedModules: string[] = [];
+    if (Array.isArray(rawUser.moduleAccess)) {
+      parsedModules = rawUser.moduleAccess.map(String);
+    } else if (typeof rawUser.moduleAccess === "string") {
+      try {
+        parsedModules = JSON.parse(rawUser.moduleAccess);
+      } catch {
+        parsedModules = [];
+      }
+    }
+
+    const permissions: ModulePermissions = Object.fromEntries(
+      MODULE_KEYS.map((k) => [
+        k,
+        rawUser.permissions && typeof rawUser.permissions === "object" && (rawUser.permissions as Record<string, boolean>)[k] === true ||
+        parsedModules.some((m) =>
+          m.toLowerCase().replace(/[\s_-]/g, "") === k.toLowerCase().replace(/[\s_-]/g, "") ||
+          m.toLowerCase().includes(k.toLowerCase())
+        ) ||
+        k === "attendance", // Attendance always enabled for portal users
+      ])
+    ) as ModulePermissions;
+
+    const normalizedUser = {
+      userId: String(rawUser.userId ?? rawUser.user_id ?? rawUser.id ?? ""),
+      email: String(rawUser.email ?? ""),
+      name: String(rawUser.name ?? rawUser.fullname ?? rawUser.fullName ?? "Portal User"),
+      permissions,
+    };
+
     const response = Response.json(
       {
         success: true,
-        user: payload.user ?? payload.data ?? null,
+        user: normalizedUser,
       },
       { status: 200 }
     );
@@ -95,6 +128,7 @@ export async function POST(request: NextRequest) {
       email: user.email,
       name: user.fullname,
       permissions,
+      type: "site_user",
     })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()

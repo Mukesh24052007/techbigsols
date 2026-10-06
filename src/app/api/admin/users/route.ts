@@ -36,6 +36,15 @@ export async function GET(request: NextRequest) {
   try {
     const users = await prisma.portalUser.findMany({
       orderBy: { id: "asc" },
+      include: {
+        employee: {
+          include: {
+            faceTemplates: {
+              select: { id: true, version: true },
+            },
+          },
+        },
+      },
     });
 
     const formatted = users.map((u) => {
@@ -53,6 +62,8 @@ export async function GET(request: NextRequest) {
         moduleAccess,
         is_active: u.isActive,
         createdAt: u.createdAt.toISOString(),
+        hasFaceTemplate: (u.employee?.faceTemplates?.length ?? 0) > 0,
+        faceTemplateCount: u.employee?.faceTemplates?.length ?? 0,
       };
     });
 

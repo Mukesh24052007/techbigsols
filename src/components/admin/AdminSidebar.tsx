@@ -12,6 +12,8 @@ import {
   LogOut,
   X,
   ChevronRight,
+  MapPin,
+  FileText,
 } from "lucide-react";
 
 interface NavItem {
@@ -33,7 +35,8 @@ const navItems: NavItem[] = [
     requiresModule: "Attendance",
     subItems: [
       { label: "Live Board", href: "/admin/dashboard/attendance" },
-      { label: "Leave & Reports", href: "/admin/dashboard/attendance?tab=reports" },
+      { label: "Office Settings", href: "/admin/dashboard/attendance/settings" },
+      { label: "Reports", href: "/admin/dashboard/attendance/reports" },
     ],
   },
 ];

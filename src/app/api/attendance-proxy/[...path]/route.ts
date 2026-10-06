@@ -132,7 +132,13 @@ async function handleProxy(
       data = await backendRes.json();
     } else {
       const text = await backendRes.text();
-      data = { success: backendRes.ok, message: text };
+      const isHtml = text.trim().startsWith("<!DOCTYPE") || text.trim().startsWith("<html");
+      data = {
+        success: backendRes.ok,
+        message: isHtml
+          ? `Backend endpoint /api/attendance/${subPath} returned HTTP ${backendRes.status}.`
+          : text,
+      };
     }
 
     return Response.json(data, { status: backendRes.status });
