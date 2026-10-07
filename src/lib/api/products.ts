@@ -122,11 +122,32 @@ export function toApiBody(p: Product): Omit<ApiProduct, "id"> {
 /**
  * GET /api/products — Public
  * Returns all products from the store, mapped to the internal Product shape.
+ * Falls back to local /api/products if backend is unreachable or returns empty.
  */
 export async function fetchProducts(): Promise<Product[]> {
-  const { data } = await apiClient.get<ApiListResponse>("/api/products");
-  if (!data?.data) return [];
-  return data.data.map(toProduct);
+  try {
+    const { data } = await apiClient.get<ApiListResponse>("/api/products");
+    if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
+      return data.data.map(toProduct);
+    }
+  } catch {
+    // Backend unreachable or returned error, proceed to fallback
+  }
+
+  // Graceful fallback: local Next.js route
+  try {
+    const res = await fetch("/api/products");
+    if (res.ok) {
+      const json = await res.json();
+      if (Array.isArray(json.data) && json.data.length > 0) {
+        return json.data.map(toProduct);
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  return [];
 }
 
 /**
@@ -134,18 +155,33 @@ export async function fetchProducts(): Promise<Product[]> {
  * Returns a single product by ID.
  */
 export async function fetchProduct(id: string): Promise<Product> {
-  const { data } = await apiClient.get<ApiSingleResponse>(`/api/products/${id}`);
+  try {
+    const { data } = await apiClient.get<ApiSingleResponse>(`/api/products/${id}`);
+    const raw = (data as unknown) as Record<string, unknown>;
+    const apiProduct: ApiProduct =
+      (data?.data as ApiProduct) ??
+      (raw as unknown as ApiProduct);
 
-  const raw = (data as unknown) as Record<string, unknown>;
-  const apiProduct: ApiProduct =
-    (data?.data as ApiProduct) ??
-    (raw as unknown as ApiProduct);
-
-  if (!apiProduct || typeof apiProduct !== "object") {
-    throw new Error(`Product "${id}" not found`);
+    if (apiProduct && typeof apiProduct === "object") {
+      return toProduct(apiProduct);
+    }
+  } catch {
+    // fallback
   }
 
-  return toProduct(apiProduct);
+  // Graceful fallback to local /api/products/:id
+  try {
+    const res = await fetch(`/api/products/${id}`);
+    if (res.ok) {
+      const json = await res.json();
+      const p = json.data ?? json;
+      if (p) return toProduct(p);
+    }
+  } catch {
+    // ignore
+  }
+
+  throw new Error(`Product "${id}" not found`);
 }
 
 /**

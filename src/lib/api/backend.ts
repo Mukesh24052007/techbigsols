@@ -8,7 +8,10 @@
  */
 
 export const BACKEND_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
+  process.env.BACKEND_API_URL ??
+  (process.env.NEXT_PUBLIC_API_BASE_URL && !process.env.NEXT_PUBLIC_API_BASE_URL.includes(":3000")
+    ? process.env.NEXT_PUBLIC_API_BASE_URL
+    : "http://localhost:5000");
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 

@@ -90,6 +90,8 @@ export interface PortalUser {
   moduleAccess: string[];
   is_active: boolean;
   createdAt: string;
+  hasFaceTemplate?: boolean;
+  faceTemplateCount?: number;
 }
 
 /** Safe version (no passwordHash) sent to clients */

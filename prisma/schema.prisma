@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id          String   @id // e.g. "tbusr001", "emp-01"
+  userId      String?  @unique // linked to PortalUser id
+  name        String
+  email       String   @unique
+  department  String
+  designation String?
+  avatar      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  portalUser          PortalUser?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  faceTemplates       FaceTemplate[]
+  attendance          AttendanceRecord[]
+  leaves              Leave[]
+  attempts            AttendanceAttempt[]
+  regularizations     Regularization[]
+  consents            ConsentRecord[]
+}
+
+model FaceTemplate {
+  id                  String   @id @default(cuid())
+  employeeId          String
+  encryptedEmbedding  String   // AES-256-GCM encrypted 128-d descriptor (JSON array)
+  version             Int      @default(1)
+  createdAt           DateTime @default(now())
+
+  employee            Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model OfficeLocation {
+  id                          String   @id @default(cuid())
+  name                        String
+  lat                         Float
+  lng                         Float
+  radiusMeters                Float    @default(150)
+  shiftStart                  String   @default("09:30") // HH:mm
+  shiftEnd                    String   @default("18:30") // HH:mm
+  graceMinutes                Int      @default(10)
+  leftPremisesToleranceMinutes Int     @default(10)
+  heartbeatIntervalSeconds    Int      @default(60)
+  ipAllowlist                 String   @default("[]") // JSON array of IPs
+  auditSnapshotsEnabled       Boolean  @default(false)
+  isActive                    Boolean  @default(true)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  records                     AttendanceRecord[]
+}
+
+model AttendanceRecord {
+  id               String    @id @default(cuid())
+  employeeId       String
+  date             String    // YYYY-MM-DD in Asia/Kolkata
+  checkIn          DateTime  @default(now())
+  checkOut         DateTime?
+  checkOutReason   String?   // "MANUAL" | "AUTO_CHECKOUT" | "SHIFT_END"
+  method           String    @default("Face") // "Face" | "Manual Admin Edit"
+  status           String    @default("PRESENT") // "PRESENT" | "LATE" | "ABSENT" | "LEAVE"
+  locationStatus   String    @default("INSIDE") // "INSIDE" | "OUTSIDE" | "UNKNOWN" | "LEFT_PREMISES"
+  workedMinutes    Float     @default(0)
+  ip               String?
+  lat              Float?
+  lng              Float?
+  gpsAccuracy      Float?    // metres
+  distanceMeters   Float?
+  officeLocationId String?
+  createdAt        DateTime  @default(now())
+
+  employee         Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  officeLocation   OfficeLocation?  @relation(fields: [officeLocationId], references: [id], onDelete: SetNull)
+  presenceIntervals PresenceInterval[]
+  reVerifications  ReVerificationPrompt[]
+
+  @@unique([employeeId, date])
+}
+
+model PresenceInterval {
+  id              String    @id @default(cuid())
+  recordId        String
+  state           String    // "INSIDE" | "OUTSIDE" | "UNKNOWN"
+  startedAt       DateTime  @default(now())
+  endedAt         DateTime?
+  durationSeconds Float?
+
+  record          AttendanceRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+}
+
+model AttendanceAttempt {
+  id            String   @id @default(cuid())
+  employeeId    String
+  attemptType   String   // "CHECK_IN" | "RE_VERIFY" | "ENROLMENT"
+  success       Boolean  @default(false)
+  faceDistance   Float?   // Euclidean distance score
+  lat           Float?
+  lng           Float?
+  gpsAccuracy   Float?
+  ip            String?
+  deviceInfo    String?
+  challengeId   String?
+  flagged       Boolean  @default(false)
+  flagReason    String?
+  createdAt     DateTime @default(now())
+
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model FaceChallenge {
+  id          String   @id @default(cuid())
+  employeeId  String
+  action      String   // "BLINK_TWICE" | "TURN_LEFT" | "TURN_RIGHT" | "SMILE"
+  expiresAt   DateTime
+  used        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Regularization {
+  id          String   @id @default(cuid())
+  employeeId  String
+  date        String   // YYYY-MM-DD
+  reason      String
+  status      String   @default("PENDING") // "PENDING" | "APPROVED" | "REJECTED"
+  approvedBy  String?
+  createdAt   DateTime @default(now())
+
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model ConsentRecord {
+  id          String   @id @default(cuid())
+  employeeId  String
+  consentType String   // "FACE_ENROLMENT" | "LOCATION_TRACKING"
+  consentedAt DateTime @default(now())
+  ipAddress   String?
+
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, consentType])
+}
+
+model ReVerificationPrompt {
+  id          String    @id @default(cuid())
+  recordId    String
+  scheduledAt DateTime
+  completedAt DateTime?
+  status      String    @default("PENDING") // "PENDING" | "COMPLETED" | "MISSED"
+  createdAt   DateTime  @default(now())
+
+  record      AttendanceRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+}
+
+model Leave {
+  id          String   @id @default(cuid())
+  employeeId  String
+  fromDate    String   // YYYY-MM-DD
+  toDate      String   // YYYY-MM-DD
+  reason      String?
+  status      String   @default("APPROVED") // PENDING | APPROVED | REJECTED
+  createdAt   DateTime @default(now())
+
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String
+  target      String
+  details     String?
+  performedBy String
+  ip          String?
+  createdAt   DateTime @default(now())
+}
+
+model PortalUser {
+  id           String    @id // tbusr001, tbusr002, ...
+  email        String    @unique
+  fullname     String
+  passwordHash String
+  moduleAccess String    @default("[]") // JSON string array
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  employee     Employee?
+}
