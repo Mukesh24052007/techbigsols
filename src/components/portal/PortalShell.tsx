@@ -8,7 +8,9 @@ import { PortalTopbar } from "./PortalTopbar";
 import { MODULE_LABELS, MODULE_KEYS, type ModuleKey } from "@/types";
 
 function getPageTitle(pathname: string): string {
-  // Check module routes
+  // /portal/[userId] — personal dashboard (userId starts with "tbusr")
+  if (/^\/portal\/tbusr\w+$/.test(pathname)) return "My Dashboard";
+  // Check named module routes
   for (const key of MODULE_KEYS) {
     if (pathname === `/portal/${key}`) return MODULE_LABELS[key];
   }
@@ -27,12 +29,15 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
       router.replace("/user/login");
       return;
     }
-    // Check module-level permission for /portal/[module] routes
+    // Check module-level permission for /portal/[module] routes.
+    // Skip the personal dashboard route /portal/[userId] (e.g. /portal/tbusr001).
     const moduleMatch = pathname.match(/^\/portal\/([^/]+)$/);
     if (moduleMatch) {
-      const key = moduleMatch[1] as ModuleKey;
+      const segment = moduleMatch[1];
+      const key = segment as ModuleKey;
+      // Only guard known module keys — leave /portal/tbusr* pass-through to the page itself
       if (MODULE_KEYS.includes(key) && user?.permissions?.[key] !== true) {
-        router.replace("/portal");
+        router.replace(`/portal/${user?.userId ?? ""}`);
       }
     }
   }, [isAuthenticated, isLoading, pathname, router, user]);

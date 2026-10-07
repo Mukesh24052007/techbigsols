@@ -79,15 +79,15 @@ export function PortalSidebar({ mobileOpen, onClose }: PortalSidebarProps) {
 
         {/* Dashboard home */}
         <Link
-          href="/portal"
+          href={user?.userId ? `/portal/${user.userId}` : "/portal"}
           onClick={onClose}
           className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
-            pathname === "/portal"
+            pathname === "/portal" || (user?.userId && pathname === `/portal/${user.userId}`)
               ? "bg-[#f39200] text-white shadow-md shadow-[#f39200]/30"
               : "text-white/55 hover:text-white hover:bg-white/8"
           }`}
         >
-          <LayoutDashboard className={`w-4 h-4 flex-shrink-0 ${pathname === "/portal" ? "text-white" : "text-white/40 group-hover:text-white/80"}`} />
+          <LayoutDashboard className={`w-4 h-4 flex-shrink-0 ${pathname === "/portal" || (user?.userId && pathname === `/portal/${user.userId}`) ? "text-white" : "text-white/40 group-hover:text-white/80"}`} />
           <span className="flex-1">Dashboard</span>
         </Link>
 

@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useUserAuth } from "@/context/UserAuthContext";
 import { Eye, EyeOff, LogIn, User, AlertCircle } from "lucide-react";
 
 export default function UserLoginPage() {
-  const { login, isAuthenticated, isLoading } = useUserAuth();
+  const { isAuthenticated, isLoading, user, login } = useUserAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,11 +16,14 @@ export default function UserLoginPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // If the user already has a valid session (e.g. back-button or stale ?next= link),
+  // send them straight to their dashboard — don't show the login form.
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.replace("/portal");
+    if (!isLoading && isAuthenticated && user?.userId) {
+      const next = searchParams?.get("next");
+      router.replace(next ?? `/portal/${user.userId}`);
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, router, user, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,14 +35,19 @@ export default function UserLoginPage() {
     }
 
     setSubmitting(true);
-    const errorMsg = await login(email.trim(), password);
+    const result = await login(email.trim(), password);
     setSubmitting(false);
 
-    if (errorMsg) {
-      setError(errorMsg);
-    } else {
-      router.replace("/portal");
+    if (result.error) {
+      setError(result.error);
+      return;
     }
+
+    // Redirect immediately using the user object returned by the login response.
+    // Honour ?next= if the middleware sent us here from a protected route.
+    const userId = result.user?.userId;
+    const next = searchParams?.get("next");
+    router.replace(next ?? (userId ? `/portal/${userId}` : "/portal"));
   };
 
   if (isLoading) {

@@ -21,7 +21,8 @@ interface UserAuthContextType {
   isAuthenticated: boolean;
   user: PortalUserSession | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<string | null>;
+  /** Returns error message on failure, or null on success. On success also sets user state. */
+  login: (email: string, password: string) => Promise<{ error: string | null; user: PortalUserSession | null }>;
   logout: () => Promise<void>;
 }
 
@@ -38,14 +39,17 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
       .then(async (res) => {
         if (res.ok) {
           const data = await res.json();
-          setUser(data.user);
+          if (data.user?.userId) setUser(data.user as PortalUserSession);
         }
       })
       .catch(() => {})
       .finally(() => setIsLoading(false));
   }, []);
 
-  const login = async (email: string, password: string): Promise<string | null> => {
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<{ error: string | null; user: PortalUserSession | null }> => {
     try {
       const res = await fetch("/api/auth/user/login", {
         method: "POST",
@@ -54,11 +58,14 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      if (!res.ok) return data.message ?? "Login failed.";
-      setUser(data.user);
-      return null;
+      if (!res.ok) {
+        return { error: data.message ?? "Login failed.", user: null };
+      }
+      const sessionUser = data.user as PortalUserSession;
+      setUser(sessionUser);
+      return { error: null, user: sessionUser };
     } catch {
-      return "Network error. Please try again.";
+      return { error: "Network error. Please try again.", user: null };
     }
   };
 
