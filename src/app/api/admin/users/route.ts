@@ -1,7 +1,7 @@
 /**
  * /api/admin/users
  *
- * GET  — 🔒 Admin JWT. Proxies → GET  /api/user-master (with fallback to local Prisma DB)
+ * GET  — 🔒 Admin JWT. Proxies → GET  /api/user-master (with fallback to local Prisma DB only if backend is unreachable)
  * POST — 🔒 Admin JWT. Generates a `tbusr001`-style ID, then proxies → POST /api/user-master
  */
 
@@ -28,11 +28,12 @@ export async function GET(request: NextRequest) {
     authorization,
   });
 
-  if (result.ok) {
+  const isUnreachable = result.status >= 502 && result.status <= 504;
+  if (!isUnreachable) {
     return Response.json(result.data, { status: result.status });
   }
 
-  // Fallback to local Prisma database
+  // Fallback to local Prisma database ONLY when backend is unreachable
   try {
     const users = await prisma.portalUser.findMany({
       orderBy: { id: "asc" },
@@ -90,6 +91,8 @@ export async function POST(request: NextRequest) {
     authorization,
   });
 
+  const isListUnreachable = listResult.status >= 502 && listResult.status <= 504;
+
   if (listResult.ok) {
     const existingUsers = ((listResult.data as { data?: { user_id: string }[] })?.data ?? []);
     const user_id = generateUserId(existingUsers.map((u) => u.user_id));
@@ -100,10 +103,15 @@ export async function POST(request: NextRequest) {
       body: { user_id, ...body },
     });
 
-    return Response.json(result.data, { status: result.status });
+    const isCreateUnreachable = result.status >= 502 && result.status <= 504;
+    if (!isCreateUnreachable) {
+      return Response.json(result.data, { status: result.status });
+    }
+  } else if (!isListUnreachable) {
+    return Response.json(listResult.data, { status: listResult.status });
   }
 
-  // Fallback to local Prisma database
+  // Fallback to local Prisma database ONLY when backend is unreachable
   try {
     const allUsers = await prisma.portalUser.findMany({ select: { id: true } });
     const user_id = generateUserId(allUsers.map((u) => u.id));

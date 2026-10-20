@@ -51,6 +51,108 @@ export async function detectSingleFace(
   };
 }
 
+export interface ProcessedPhotoResult {
+  valid: boolean;
+  error?: string;
+  descriptor?: number[];
+  base64Photo?: string; // pure base64 without data: prefix
+}
+
+export async function validateAndProcessPhoto(file: File): Promise<ProcessedPhotoResult> {
+  if (!file.type.startsWith("image/")) {
+    return { valid: false, error: "Please upload an image file." };
+  }
+
+  await loadFaceApiModels();
+
+  const imgUrl = URL.createObjectURL(file);
+  const img = new Image();
+
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error("Failed to load image file."));
+    img.src = imgUrl;
+  });
+
+  try {
+    const detections = await faceapi
+      .detectAllFaces(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 }))
+      .withFaceLandmarks()
+      .withFaceDescriptors();
+
+    if (detections.length === 0) {
+      return { valid: false, error: "No face found" };
+    }
+    if (detections.length > 1) {
+      return { valid: false, error: "More than one face found" };
+    }
+
+    const single = detections[0];
+    const score = single.detection.score;
+    const boxWidth = single.detection.box.width;
+
+    if (score < 0.8 || boxWidth < 120) {
+      return { valid: false, error: "Face is too small or too dark, use a clearer photo" };
+    }
+
+    const descriptor = Array.from(single.descriptor);
+
+    // Downscale to at most 480px on the longest side as JPEG
+    const origWidth = img.naturalWidth || img.width;
+    const origHeight = img.naturalHeight || img.height;
+    const longest = Math.max(origWidth, origHeight);
+    const scale = longest > 480 ? 480 / longest : 1;
+    const targetWidth = Math.max(1, Math.round(origWidth * scale));
+    const targetHeight = Math.max(1, Math.round(origHeight * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return { valid: false, error: "Canvas processing failed." };
+    }
+
+    // White background in case of transparent PNG/WebP
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, targetWidth, targetHeight);
+    ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+    // Iteratively compress until <= 55 KB (56,320 bytes)
+    const MAX_BYTES = 55 * 1024;
+    let quality = 0.92;
+    let chosenBase64 = "";
+    let finalByteLength = Infinity;
+
+    while (quality >= 0.08) {
+      const dataUrl = canvas.toDataURL("image/jpeg", quality);
+      const pureBase64 = dataUrl.replace(/^data:image\/jpeg;base64,/, "");
+      const byteLength = Math.round((pureBase64.length * 3) / 4);
+      if (byteLength <= MAX_BYTES) {
+        chosenBase64 = pureBase64;
+        finalByteLength = byteLength;
+        break;
+      }
+      quality -= 0.05;
+    }
+
+    if (!chosenBase64 || finalByteLength > MAX_BYTES) {
+      return {
+        valid: false,
+        error: "Photo could not be compressed below 55 KB. Please use a smaller photo.",
+      };
+    }
+
+    return {
+      valid: true,
+      descriptor,
+      base64Photo: chosenBase64,
+    };
+  } finally {
+    URL.revokeObjectURL(imgUrl);
+  }
+}
+
 // ── Liveness Calculations ───────────────────────────────────────────────────
 
 function dist(p1: faceapi.Point, p2: faceapi.Point): number {

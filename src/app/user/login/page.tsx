@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUserAuth } from "@/context/UserAuthContext";
 import { Eye, EyeOff, LogIn, User, AlertCircle } from "lucide-react";
 
-export default function UserLoginPage() {
+function LoginForm() {
   const { isAuthenticated, isLoading, user, login } = useUserAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -165,5 +165,22 @@ export default function UserLoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function UserLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#05142b] flex items-center justify-center">
+          <svg className="animate-spin w-8 h-8 text-[#004aad]" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+          </svg>
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

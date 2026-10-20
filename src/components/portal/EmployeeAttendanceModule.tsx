@@ -23,7 +23,6 @@ import {
   CheckCircle2,
   RefreshCw,
   LogOut,
-  Clock,
   Sparkles,
   History,
   Lock,
@@ -33,6 +32,20 @@ import {
   Smile,
   MoveHorizontal,
 } from "lucide-react";
+
+function getFreshPosition(): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      reject(new Error("Geolocation is not supported by your browser."));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 15000,
+    });
+  });
+}
 
 export function EmployeeAttendanceModule() {
   // ── Overall status state ──────────────────────────────────────────────────
@@ -45,9 +58,11 @@ export function EmployeeAttendanceModule() {
     lat: number;
     lng: number;
     accuracy: number;
+    fixTimestamp?: number;
   } | null>(null);
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [distanceMeters, setDistanceMeters] = useState<number | null>(null);
+  const [locationRejection, setLocationRejection] = useState<string | null>(null);
 
   // ── Camera & Liveness Check-in state ──────────────────────────────────────
   const [cameraActive, setCameraActive] = useState(false);
@@ -84,6 +99,9 @@ export function EmployeeAttendanceModule() {
     try {
       const data = await employeeAttendanceApi.getStatus();
       setStatus(data);
+      if (data.reverifyRequired || data.reverifyPending) {
+        setShowReverifyModal(true);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to load attendance status.";
       setErrorBanner(msg);
@@ -115,7 +133,48 @@ export function EmployeeAttendanceModule() {
     void loadHistory(historyMonth);
   }, [historyMonth, loadHistory]);
 
-  // 3. Watch GPS Position
+  // Helper to acquire a fresh position and validate geofence limits
+  const checkFreshLocation = useCallback(async () => {
+    try {
+      const pos = await getFreshPosition();
+      const { latitude, longitude, accuracy } = pos.coords;
+      const fixTimestamp = pos.timestamp;
+      setGpsError(null);
+      setGpsLocation({ lat: latitude, lng: longitude, accuracy, fixTimestamp });
+
+      if (status?.office) {
+        const dist = calculateDistanceMeters(
+          latitude,
+          longitude,
+          Number(status.office.lat),
+          Number(status.office.lng)
+        );
+        setDistanceMeters(dist);
+
+        const radius = Number(status.office.radius_m) || 150;
+        const maxAcc = Number(status.office.accuracy_max_m) || 50;
+
+        if (accuracy > maxAcc) {
+          setLocationRejection("GPS signal is too weak. Move near a window or an open area and try again.");
+        } else if (dist > radius) {
+          setLocationRejection("Location verification failed: You are outside the authorized office premises.");
+        } else {
+          setLocationRejection(null);
+        }
+      }
+      return pos;
+    } catch (err: unknown) {
+      let msg = "Unable to acquire GPS signal. Move near a window or enable Wi-Fi.";
+      if (err instanceof GeolocationPositionError && err.code === 1) {
+        msg = "Location permission denied. Please allow GPS access in browser settings.";
+      }
+      setGpsError(msg);
+      setLocationRejection(msg);
+      return null;
+    }
+  }, [status?.office]);
+
+  // 3. Continuous GPS Watch
   useEffect(() => {
     if (!navigator.geolocation) {
       setGpsError("Geolocation is not supported by your browser.");
@@ -126,16 +185,26 @@ export function EmployeeAttendanceModule() {
       (pos) => {
         setGpsError(null);
         const { latitude, longitude, accuracy } = pos.coords;
-        setGpsLocation({ lat: latitude, lng: longitude, accuracy });
+        setGpsLocation({ lat: latitude, lng: longitude, accuracy, fixTimestamp: pos.timestamp });
 
         if (status?.office) {
           const dist = calculateDistanceMeters(
             latitude,
             longitude,
-            status.office.lat,
-            status.office.lng
+            Number(status.office.lat),
+            Number(status.office.lng)
           );
           setDistanceMeters(dist);
+
+          const radius = Number(status.office.radius_m) || 150;
+          const maxAcc = Number(status.office.accuracy_max_m) || 50;
+          if (accuracy > maxAcc) {
+            setLocationRejection("GPS signal is too weak. Move near a window or an open area and try again.");
+          } else if (dist > radius) {
+            setLocationRejection("Location verification failed: You are outside the authorized office premises.");
+          } else {
+            setLocationRejection(null);
+          }
         }
       },
       (err) => {
@@ -147,8 +216,8 @@ export function EmployeeAttendanceModule() {
       },
       {
         enableHighAccuracy: true,
-        maximumAge: 5000,
-        timeout: 10000,
+        maximumAge: 0,
+        timeout: 15000,
       }
     );
 
@@ -181,15 +250,32 @@ export function EmployeeAttendanceModule() {
       const intervalMs = Math.max(intervalSec * 1000, 15000);
 
       const sendBeat = async () => {
-        if (!gpsLocation) return;
+        let lat = gpsLocation?.lat;
+        let lng = gpsLocation?.lng;
+        let accuracy = gpsLocation?.accuracy;
+        let fixTimestamp = gpsLocation?.fixTimestamp ?? Date.now();
+
+        try {
+          const pos = await getFreshPosition();
+          lat = pos.coords.latitude;
+          lng = pos.coords.longitude;
+          accuracy = pos.coords.accuracy;
+          fixTimestamp = pos.timestamp;
+          setGpsLocation({ lat, lng, accuracy, fixTimestamp });
+        } catch {
+          // fallback to current coordinates
+        }
+
+        if (lat === undefined || lng === undefined || accuracy === undefined) return;
         try {
           const res = await employeeAttendanceApi.sendHeartbeat({
-            lat: gpsLocation.lat,
-            lng: gpsLocation.lng,
-            accuracy: gpsLocation.accuracy,
+            lat,
+            lng,
+            accuracy,
+            fixTimestamp,
           });
 
-          if (res.reverifyPending) {
+          if (res.reverifyRequired || res.reverifyPending) {
             setShowReverifyModal(true);
           }
         } catch {
@@ -219,7 +305,7 @@ export function EmployeeAttendanceModule() {
   }, [status?.todayRecord, status?.office, gpsLocation]);
 
   // 5. Camera Management
-  const stopCamera = () => {
+  const stopCamera = useCallback(() => {
     if (detectionLoopRef.current) {
       cancelAnimationFrame(detectionLoopRef.current);
       detectionLoopRef.current = null;
@@ -232,13 +318,88 @@ export function EmployeeAttendanceModule() {
       videoRef.current.srcObject = null;
     }
     setCameraActive(false);
-  };
+  }, []);
 
   const startCamera = async () => {
     setErrorBanner(null);
-    setLivenessStatusText("Initializing camera and AI models...");
-    setCameraActive(true);
+    setLivenessStatusText("Requesting fresh GPS position…");
 
+    // 1. Always request fresh position right before challenge
+    let freshPos: GeolocationPosition | null = null;
+    try {
+      freshPos = await getFreshPosition();
+    } catch (err: unknown) {
+      const msg =
+        err instanceof GeolocationPositionError && err.code === 1
+          ? "Location permission denied. Please allow GPS access in browser settings."
+          : "GPS signal is too weak. Move near a window or an open area and try again.";
+      setGpsError(msg);
+      setLocationRejection(msg);
+      setErrorBanner(msg);
+      return;
+    }
+
+    const { latitude, longitude, accuracy } = freshPos.coords;
+    const fixTimestamp = freshPos.timestamp;
+    setGpsLocation({ lat: latitude, lng: longitude, accuracy, fixTimestamp });
+
+    if (status?.office) {
+      const dist = calculateDistanceMeters(
+        latitude,
+        longitude,
+        Number(status.office.lat),
+        Number(status.office.lng)
+      );
+      setDistanceMeters(dist);
+
+      const radius = Number(status.office.radius_m) || 150;
+      const maxAcc = Number(status.office.accuracy_max_m) || 50;
+
+      if (accuracy > maxAcc) {
+        const msg = "GPS signal is too weak. Move near a window or an open area and try again.";
+        setLocationRejection(msg);
+        setErrorBanner(msg);
+        return;
+      }
+      if (dist > radius) {
+        const msg = "Location verification failed: You are outside the authorized office premises.";
+        setLocationRejection(msg);
+        setErrorBanner(msg);
+        return;
+      }
+    }
+
+    // 2. Request challenge with fresh position
+    try {
+      const ch = await employeeAttendanceApi.requestChallenge({
+        purpose: showReverifyModal ? "reverify" : "checkin",
+        lat: latitude,
+        lng: longitude,
+        accuracy,
+        fixTimestamp,
+      });
+
+      setLocationRejection(null);
+      setChallenge(ch);
+      setCapturedDescriptors([]);
+      setActionSuccess(false);
+      setLivenessProgress(0);
+
+      let actionDesc = "";
+      if (ch.action === "BLINK_TWICE") actionDesc = "Please blink your eyes twice naturally";
+      else if (ch.action === "TURN_LEFT") actionDesc = "Turn your head slowly to your left";
+      else if (ch.action === "TURN_RIGHT") actionDesc = "Turn your head slowly to your right";
+      else if (ch.action === "SMILE") actionDesc = "Smile at the camera";
+      setLivenessStatusText(actionDesc);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Location verification failed.";
+      setLocationRejection(msg);
+      setErrorBanner(msg);
+      return;
+    }
+
+    // 3. Start Camera only after location challenge succeeds
+    setCameraActive(true);
     try {
       await loadFaceApiModels();
       setModelsReady(true);
@@ -257,25 +418,6 @@ export function EmployeeAttendanceModule() {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
       }
-
-      // Request fresh challenge from backend
-      const ch = await employeeAttendanceApi.requestChallenge({
-        purpose: showReverifyModal ? "reverify" : "checkin",
-        lat: gpsLocation?.lat,
-        lng: gpsLocation?.lng,
-        accuracy: gpsLocation?.accuracy,
-      });
-      setChallenge(ch);
-      setCapturedDescriptors([]);
-      setActionSuccess(false);
-      setLivenessProgress(0);
-
-      let actionDesc = "";
-      if (ch.action === "BLINK_TWICE") actionDesc = "Please blink your eyes twice naturally";
-      else if (ch.action === "TURN_LEFT") actionDesc = "Turn your head slowly to your left";
-      else if (ch.action === "TURN_RIGHT") actionDesc = "Turn your head slowly to your right";
-      else if (ch.action === "SMILE") actionDesc = "Smile at the camera";
-      setLivenessStatusText(actionDesc);
     } catch (err: unknown) {
       stopCamera();
       const msg = err instanceof Error ? err.message : "Camera access denied or models failed to load.";
@@ -299,18 +441,15 @@ export function EmployeeAttendanceModule() {
       }
 
       frameCounter++;
-      // Process every 2nd frame to ensure 30+ FPS on mobile
       if (frameCounter % 2 === 0) {
         try {
           const res = await detectSingleFace(videoRef.current);
           if (res) {
-            // Sample descriptor if we need more
             if (descriptorsCollected.length < 3 && frameCounter % 6 === 0) {
               descriptorsCollected.push(Array.from(res.descriptor));
               setCapturedDescriptors([...descriptorsCollected]);
             }
 
-            // Evaluate challenge action
             if (challenge.action === "BLINK_TWICE") {
               const ear = computeEAR(res.landmarks);
               if (ear < 0.22 && !eyeClosed) {
@@ -361,7 +500,7 @@ export function EmployeeAttendanceModule() {
             setLivenessStatusText("Align your face inside the oval frame");
           }
         } catch {
-          // ignore detection error on frame
+          // ignore frame detection error
         }
       }
 
@@ -387,11 +526,45 @@ export function EmployeeAttendanceModule() {
       setSubmittingCheckIn(true);
       setErrorBanner(null);
 
-      const effectiveLat = gpsLocation?.lat ?? status?.office?.lat ?? 12.9716;
-      const effectiveLng = gpsLocation?.lng ?? status?.office?.lng ?? 77.5946;
-      const effectiveAccuracy = gpsLocation?.accuracy ?? 10;
+      // Always request a fresh position right before check-in
+      let freshPos: GeolocationPosition | null = null;
+      try {
+        freshPos = await getFreshPosition();
+      } catch (posErr: unknown) {
+        const msg =
+          posErr instanceof GeolocationPositionError && posErr.code === 1
+            ? "Location permission denied. Please allow GPS access in browser settings."
+            : "GPS signal is too weak. Move near a window or an open area and try again.";
+        setLocationRejection(msg);
+        setErrorBanner(msg);
+        stopCamera();
+        setSubmittingCheckIn(false);
+        return;
+      }
 
-      // Make sure we have at least 3 descriptors
+      const effectiveLat = freshPos.coords.latitude;
+      const effectiveLng = freshPos.coords.longitude;
+      const effectiveAccuracy = freshPos.coords.accuracy;
+      const effectiveFixTimestamp = freshPos.timestamp;
+
+      setGpsLocation({
+        lat: effectiveLat,
+        lng: effectiveLng,
+        accuracy: effectiveAccuracy,
+        fixTimestamp: effectiveFixTimestamp,
+      });
+
+      if (status?.office) {
+        const dist = calculateDistanceMeters(
+          effectiveLat,
+          effectiveLng,
+          Number(status.office.lat),
+          Number(status.office.lng)
+        );
+        setDistanceMeters(dist);
+      }
+
+      // Ensure 3 descriptors
       const descriptorsToSend = [...capturedDescriptors];
       while (descriptorsToSend.length < 3 && descriptorsToSend.length > 0) {
         descriptorsToSend.push(descriptorsToSend[0]);
@@ -405,6 +578,7 @@ export function EmployeeAttendanceModule() {
             lat: effectiveLat,
             lng: effectiveLng,
             accuracy: effectiveAccuracy,
+            fixTimestamp: effectiveFixTimestamp,
           });
           setShowReverifyModal(false);
           stopCamera();
@@ -416,6 +590,7 @@ export function EmployeeAttendanceModule() {
             lat: effectiveLat,
             lng: effectiveLng,
             accuracy: effectiveAccuracy,
+            fixTimestamp: effectiveFixTimestamp,
           });
           stopCamera();
           await loadStatus();
@@ -424,38 +599,30 @@ export function EmployeeAttendanceModule() {
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "Verification failed.";
         setErrorBanner(msg);
-        // Request a new challenge on error because challenges are single-use
-        setActionSuccess(false);
-        try {
-          const freshCh = await employeeAttendanceApi.requestChallenge({
-            purpose: showReverifyModal ? "reverify" : "checkin",
-            lat: effectiveLat,
-            lng: effectiveLng,
-            accuracy: effectiveAccuracy,
-          });
-          setChallenge(freshCh);
-          setLivenessProgress(0);
-          setCapturedDescriptors([]);
-          setLivenessStatusText(`Retrying: ${freshCh.action.replace("_", " ")}`);
-        } catch {
-          stopCamera();
-        }
+        setLocationRejection(msg);
+        stopCamera();
       } finally {
         setSubmittingCheckIn(false);
       }
     };
 
     void performSubmission();
-  }, [actionSuccess, challenge, submittingCheckIn, capturedDescriptors, gpsLocation, showReverifyModal, stopCamera, loadStatus, loadHistory, historyMonth]);
+  }, [actionSuccess, challenge, submittingCheckIn, capturedDescriptors, showReverifyModal, stopCamera, loadStatus, loadHistory, historyMonth, status?.office]);
 
   // 8. Handle Check-Out
   const handleCheckOut = async () => {
     if (!confirm("Are you sure you want to mark Check-out for today?")) return;
 
-    const effectiveLat = gpsLocation?.lat ?? status?.office?.lat ?? 12.9716;
-    const effectiveLng = gpsLocation?.lng ?? status?.office?.lng ?? 77.5946;
-    const effectiveAccuracy = gpsLocation?.accuracy ?? 10;
+    let freshPos: GeolocationPosition | null = null;
+    try {
+      freshPos = await getFreshPosition();
+    } catch {
+      // fallback
+    }
 
+    const effectiveLat = freshPos?.coords.latitude ?? gpsLocation?.lat ?? (status?.office ? Number(status.office.lat) : 0);
+    const effectiveLng = freshPos?.coords.longitude ?? gpsLocation?.lng ?? (status?.office ? Number(status.office.lng) : 0);
+    const effectiveAccuracy = freshPos?.coords.accuracy ?? gpsLocation?.accuracy ?? 10;
     setLoading(true);
     try {
       await employeeAttendanceApi.checkOut({
@@ -488,80 +655,13 @@ export function EmployeeAttendanceModule() {
     }
   };
 
-  // 10. Self-Enrol face for demo/test
-  const [enrollingFace, setEnrollingFace] = useState(false);
-  const handleSelfEnrol = async () => {
-    setEnrollingFace(true);
-    setErrorBanner(null);
-    try {
-      const res = await fetch("/api/attendance/self-enrol", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        await loadStatus();
-      } else {
-        setErrorBanner(data.message || "Failed to enrol face.");
-      }
-    } catch {
-      setErrorBanner("Network error enrolling face.");
-    } finally {
-      setEnrollingFace(false);
-    }
-  };
-
-  // 11. Simulate HQ office location
-  const handleSimulateOffice = () => {
-    const officeLat = status?.office?.lat ?? 12.9716;
-    const officeLng = status?.office?.lng ?? 77.5946;
-    setGpsLocation({ lat: officeLat, lng: officeLng, accuracy: 12 });
-    setDistanceMeters(0);
-    setGpsError(null);
-  };
-
-  // 12. Quick Demo Check-in (instant presentation bypass)
-  const handleQuickDemoCheckIn = async () => {
-    setSubmittingCheckIn(true);
-    setErrorBanner(null);
-    try {
-      const officeLat = status?.office?.lat ?? 12.9716;
-      const officeLng = status?.office?.lng ?? 77.5946;
-      const ch = await employeeAttendanceApi.requestChallenge({
-        purpose: "checkin",
-        lat: officeLat,
-        lng: officeLng,
-        accuracy: 12,
-      });
-      // Wait 2.2s for server timing policy
-      await new Promise((r) => setTimeout(r, 2200));
-      const d1 = Array.from({ length: 128 }, () => 0.1);
-      const d2 = Array.from({ length: 128 }, (_, i) => (i === 0 ? 0.106 : 0.1));
-      const d3 = Array.from({ length: 128 }, (_, i) => (i === 1 ? 0.106 : 0.1));
-      await employeeAttendanceApi.checkIn({
-        challengeId: ch.challengeId,
-        descriptors: [d1, d2, d3],
-        lat: officeLat,
-        lng: officeLng,
-        accuracy: 12,
-      });
-      await loadStatus();
-      await loadHistory(historyMonth);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Quick check-in failed.";
-      setErrorBanner(msg);
-    } finally {
-      setSubmittingCheckIn(false);
-    }
-  };
-
   // ── Render Helpers ──────────────────────────────────────────────────────────
 
-  const radiusLimit = status?.office?.radius_m ?? 100;
+  const radiusLimit = Number(status?.office?.radius_m) || 150;
+  const maxAccLimit = Number(status?.office?.accuracy_max_m) || 50;
   const isInsideRadius = distanceMeters !== null && distanceMeters <= radiusLimit;
-  const isGpsAccurate = gpsLocation ? gpsLocation.accuracy <= (status?.office?.max_gps_accuracy_m ?? 60) : false;
-  const canCheckIn = isInsideRadius && isGpsAccurate;
+  const isGpsAccurate = gpsLocation ? gpsLocation.accuracy <= maxAccLimit : false;
+  const canCheckIn = isInsideRadius && isGpsAccurate && !locationRejection;
 
   if (loading) {
     return (
@@ -616,17 +716,9 @@ export function EmployeeAttendanceModule() {
         </div>
         <h2 className="text-xl font-bold text-slate-900 mb-2">Face Biometrics Not Enrolled</h2>
         <p className="text-sm text-slate-600 max-w-md mx-auto mb-6">
-          Your face has not been registered in the system yet. You can enrol your biometric profile with 1 click for testing or contact your HR administrator.
+          Your face has not been registered in the system yet. Please contact your administrator or HR department to complete face enrolment.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
-          <button
-            onClick={handleSelfEnrol}
-            disabled={enrollingFace}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-[#f39200] hover:bg-[#e08500] shadow-md shadow-[#f39200]/25 transition-all disabled:opacity-50"
-          >
-            {enrollingFace ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            <span>{enrollingFace ? "Registering…" : "Quick Enrol Face (Demo)"}</span>
-          </button>
           <button
             onClick={loadStatus}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors"
@@ -664,7 +756,7 @@ export function EmployeeAttendanceModule() {
           <div className="flex items-center gap-3">
             <div
               className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                isInsideRadius
+                isInsideRadius && !locationRejection
                   ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
                   : "bg-rose-50 text-rose-600 border border-rose-200"
               }`}
@@ -686,7 +778,7 @@ export function EmployeeAttendanceModule() {
               <div className="flex flex-col sm:items-end">
                 <span
                   className={`font-semibold ${
-                    isInsideRadius ? "text-emerald-700" : "text-rose-600"
+                    isInsideRadius && !locationRejection ? "text-emerald-700" : "text-rose-600"
                   }`}
                 >
                   {isInsideRadius
@@ -695,29 +787,27 @@ export function EmployeeAttendanceModule() {
                 </span>
                 <span className="text-xs text-slate-500">
                   GPS Accuracy: ±{Math.round(gpsLocation?.accuracy ?? 0)}m
-                  {!isGpsAccurate && " (Low signal, move near window)"}
+                  {!isGpsAccurate && ` (Required limit: ±${maxAccLimit}m)`}
                 </span>
-                {!isInsideRadius && (
-                  <button
-                    type="button"
-                    onClick={handleSimulateOffice}
-                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-[#0a4bb3] hover:text-[#083d91] bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 transition-colors"
-                  >
-                    <MapPin className="w-3.5 h-3.5" />
-                    <span>Use Office Location (HQ Bangalore)</span>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => void checkFreshLocation()}
+                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-[#0a4bb3] hover:text-[#083d91] bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Refresh Location</span>
+                </button>
               </div>
             ) : gpsError ? (
               <div className="flex flex-col sm:items-end">
                 <span className="text-xs text-rose-600 font-medium">{gpsError}</span>
                 <button
                   type="button"
-                  onClick={handleSimulateOffice}
+                  onClick={() => void checkFreshLocation()}
                   className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-[#0a4bb3] hover:text-[#083d91] bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 transition-colors"
                 >
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span>Use Office Location (HQ Bangalore)</span>
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Refresh Location</span>
                 </button>
               </div>
             ) : (
@@ -725,11 +815,11 @@ export function EmployeeAttendanceModule() {
                 <span className="text-xs text-slate-400">Acquiring GPS location...</span>
                 <button
                   type="button"
-                  onClick={handleSimulateOffice}
+                  onClick={() => void checkFreshLocation()}
                   className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-[#0a4bb3] hover:text-[#083d91] bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 transition-colors"
                 >
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span>Use Office Location (HQ Bangalore)</span>
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Refresh Location</span>
                 </button>
               </div>
             )}
@@ -759,29 +849,29 @@ export function EmployeeAttendanceModule() {
                     className={`w-full sm:w-auto min-w-[220px] flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-bold text-white transition-all shadow-lg ${
                       canCheckIn
                         ? "bg-[#f39200] hover:bg-[#e08500] shadow-[#f39200]/25 cursor-pointer"
-                        : "bg-slate-300 shadow-none cursor-not-allowed"
+                        : "bg-slate-300 shadow-none cursor-not-allowed opacity-60"
                     }`}
                   >
                     <Camera className="w-5 h-5" />
                     <span>Start Face Check-in</span>
                   </button>
-
-                  <button
-                    type="button"
-                    onClick={handleQuickDemoCheckIn}
-                    disabled={submittingCheckIn}
-                    className="w-full sm:w-auto min-w-[190px] flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 transition-all shadow-sm disabled:opacity-50"
-                  >
-                    {submittingCheckIn ? (
-                      <RefreshCw className="w-4 h-4 animate-spin text-[#f39200]" />
-                    ) : (
-                      <Sparkles className="w-4 h-4 text-[#f39200]" />
-                    )}
-                    <span>{submittingCheckIn ? "Checking in…" : "Quick Check-in (Demo)"}</span>
-                  </button>
                 </div>
 
-                {!canCheckIn && (
+                {locationRejection && (
+                  <div className="flex items-center gap-2.5 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 max-w-md w-full animate-fadeIn">
+                    <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                    <span className="flex-1">{locationRejection}</span>
+                    <button
+                      type="button"
+                      onClick={() => void checkFreshLocation()}
+                      className="underline hover:text-rose-900 text-[11px] font-bold whitespace-nowrap"
+                    >
+                      Refresh GPS
+                    </button>
+                  </div>
+                )}
+
+                {!locationRejection && !canCheckIn && (
                   <p className="text-xs text-slate-400 mt-1 text-center">
                     Check-in is enabled when you are within {radiusLimit}m of the office with good GPS.
                   </p>
@@ -892,6 +982,32 @@ export function EmployeeAttendanceModule() {
                 Active presence is tracked via periodic heartbeats. Screen Wake Lock is maintained so you remain marked present during office hours.
               </div>
             </div>
+
+            {/* Re-verification Required Banner */}
+            {(status?.reverifyRequired || status?.reverifyPending || showReverifyModal) && (
+              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-rose-900">
+                      You were away from the office. Verify your face to resume tracking
+                    </p>
+                    <p className="text-xs font-semibold text-rose-600 mt-0.5">Not counted until verified</p>
+                  </div>
+                </div>
+                {!showReverifyModal && (
+                  <button
+                    onClick={() => {
+                      setShowReverifyModal(true);
+                      void startCamera();
+                    }}
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-colors shadow-sm self-start sm:self-auto"
+                  >
+                    Verify Face Now
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -953,7 +1069,7 @@ export function EmployeeAttendanceModule() {
                   if (r.status === "ON_LEAVE") badgeCls = "bg-blue-50 text-blue-700 border-blue-200";
 
                   return (
-                    <tr key={r.id || r.date} className="hover:bg-slate-50/50">
+                    <tr key={r.id} className="hover:bg-slate-50 transition-colors">
                       <td className="py-3 font-medium text-slate-800">{r.date}</td>
                       <td className="py-3 text-slate-600">
                         {r.checkInTime ? new Date(r.checkInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
@@ -962,10 +1078,10 @@ export function EmployeeAttendanceModule() {
                         {r.checkOutTime ? new Date(r.checkOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}
                       </td>
                       <td className="py-3 text-slate-600">
-                        {r.workedMinutes ? `${Math.floor(r.workedMinutes / 60)}h ${r.workedMinutes % 60}m` : "—"}
+                        {r.workedMinutes > 0 ? `${Math.floor(r.workedMinutes / 60)}h ${r.workedMinutes % 60}m` : "—"}
                       </td>
                       <td className="py-3 text-right">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold border ${badgeCls}`}>
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold border ${badgeCls}`}>
                           {r.status}
                         </span>
                       </td>
@@ -980,37 +1096,75 @@ export function EmployeeAttendanceModule() {
 
       {/* Re-verification Modal */}
       {showReverifyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
-            <div className="text-center mb-4">
-              <div className="w-12 h-12 bg-amber-50 text-[#f39200] rounded-2xl flex items-center justify-center mx-auto mb-3">
-                <Clock className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Periodic Presence Re-verification</h3>
-              <p className="text-xs text-slate-500 mt-1">
-                Please complete a quick liveness scan to verify you are still on company premises.
-              </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 text-center relative overflow-hidden">
+            <div className="w-14 h-14 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-7 h-7 text-rose-600" />
+            </div>
+
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Re-verification Required</h3>
+            <p className="text-sm text-slate-600 mb-2 font-medium">
+              You were away from the office. Verify your face to resume tracking
+            </p>
+            <div className="inline-block px-3 py-1 bg-rose-100 border border-rose-200 text-rose-800 text-xs font-bold rounded-full mb-6">
+              Not counted until verified
             </div>
 
             {!cameraActive ? (
-              <div className="flex justify-center my-4">
+              <div className="space-y-4">
+                {locationRejection && (
+                  <div className="p-3 bg-rose-50 text-rose-700 border border-rose-200 rounded-xl text-xs">
+                    {locationRejection}
+                  </div>
+                )}
                 <button
-                  onClick={startCamera}
-                  className="px-6 py-3 rounded-xl font-bold text-white bg-[#f39200] hover:bg-[#e08500] shadow-md shadow-[#f39200]/20"
+                  onClick={() => void startCamera()}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-[#f39200] hover:bg-[#e08500] text-white font-bold rounded-xl transition-all shadow-lg shadow-[#f39200]/25 cursor-pointer"
                 >
-                  Start Re-verify Scan
+                  <Camera className="w-5 h-5" />
+                  <span>Start Face Verification</span>
                 </button>
               </div>
             ) : (
-              <div className="my-2">
-                <div className="relative aspect-square bg-slate-900 rounded-2xl overflow-hidden">
-                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
-                  <div className="absolute inset-0 m-auto w-[70%] h-[75%] rounded-[50%] border-4 border-[#f39200]" />
-                  <div className="absolute top-2 inset-x-2 text-center">
-                    <span className="bg-black/75 text-white text-[10px] px-3 py-1 rounded-full font-medium">
+              <div className="max-w-sm mx-auto">
+                <div className="relative aspect-square bg-slate-900 rounded-2xl overflow-hidden shadow-inner flex items-center justify-center mb-3">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover scale-x-[-1]"
+                  />
+                  <div
+                    className={`absolute inset-0 m-auto w-[70%] h-[75%] rounded-[50%] border-4 pointer-events-none transition-colors duration-300 ${
+                      actionSuccess
+                        ? "border-emerald-500 shadow-[0_0_25px_rgba(16,185,129,0.5)]"
+                        : "border-[#f39200] shadow-[0_0_20px_rgba(243,146,0,0.4)]"
+                    }`}
+                  />
+                  <div className="absolute top-3 inset-x-3 flex justify-center">
+                    <div className="bg-black/75 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full border border-white/10 shadow-lg text-center font-medium">
                       {livenessStatusText}
-                    </span>
+                    </div>
                   </div>
+                  <div className="absolute bottom-3 inset-x-6">
+                    <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden backdrop-blur-sm">
+                      <div
+                        className="bg-[#f39200] h-full transition-all duration-200"
+                        style={{ width: `${livenessProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-slate-500">
+                  <span>Action: {challenge?.action?.replace("_", " ")}</span>
+                  <button
+                    onClick={stopCamera}
+                    className="text-xs text-slate-500 hover:text-slate-800 font-semibold px-2 py-1 rounded border border-slate-200"
+                  >
+                    Pause Camera
+                  </button>
                 </div>
               </div>
             )}

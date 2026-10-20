@@ -7,6 +7,9 @@ import { MODULE_KEYS, MODULE_LABELS, type ModuleKey, type PortalUserPublic, type
 import { UserPlus, Trash2, ShieldCheck, ShieldOff, RefreshCw, X, Eye, EyeOff, CheckSquare, Square, ScanFace } from "lucide-react";
 import dynamic from "next/dynamic";
 
+import { adminFaceApi } from "@/lib/attendanceApi";
+import { validateAndProcessPhoto } from "@/lib/faceClient";
+
 const AdminFaceEnrolmentModal = dynamic(
   () =>
     import("@/components/admin/AdminFaceEnrolmentModal").then(
@@ -38,7 +41,7 @@ const BACKEND_MODULE_LABELS: Record<ModuleKey, string> = {
 
 interface CreateUserModalProps {
   onClose: () => void;
-  onCreated: () => void;
+  onCreated: (noticeMsg?: string) => void;
 }
 
 function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
@@ -52,6 +55,23 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  // Attendance photo & consent state
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoChecking, setPhotoChecking] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [photoValid, setPhotoValid] = useState(false);
+  const [descriptor, setDescriptor] = useState<number[] | null>(null);
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+  const [consentAttested, setConsentAttested] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (photoPreview) {
+        URL.revokeObjectURL(photoPreview);
+      }
+    };
+  }, [photoPreview]);
+
   const toggle = (key: ModuleKey) =>
     setPermissions((prev) => ({ ...prev, [key]: !prev[key] }));
 
@@ -60,6 +80,43 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
 
   const clearAll = () =>
     setPermissions(Object.fromEntries(MODULE_KEYS.map((k) => [k, false])) as ModulePermissions);
+
+  const isAttendance = Boolean(permissions.attendance);
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (photoPreview) {
+      URL.revokeObjectURL(photoPreview);
+    }
+    const preview = URL.createObjectURL(file);
+    setPhotoPreview(preview);
+    setPhotoChecking(true);
+    setPhotoError(null);
+    setPhotoValid(false);
+    setDescriptor(null);
+    setPhotoBase64(null);
+
+    try {
+      const result = await validateAndProcessPhoto(file);
+      if (!result.valid || !result.descriptor || !result.base64Photo) {
+        setPhotoError(result.error || "Photo validation failed.");
+        setPhotoValid(false);
+      } else {
+        setDescriptor(result.descriptor);
+        setPhotoBase64(result.base64Photo);
+        setPhotoValid(true);
+        setPhotoError(null);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error analyzing photo.";
+      setPhotoError(msg);
+      setPhotoValid(false);
+    } finally {
+      setPhotoChecking(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,8 +129,14 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
       setError("Password must be at least 6 characters.");
       return;
     }
+    if (isAttendance && (!photoValid || !photoBase64 || !descriptor || !consentAttested)) {
+      setError("Please provide a valid verification photo and consent confirmation.");
+      return;
+    }
+
     setSubmitting(true);
     try {
+      // Run the EXISTING create-user call exactly as today. Do not modify the create-user call or its payload.
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: authHeaders(),
@@ -86,8 +149,38 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message ?? "Failed to create user.");
-      onCreated();
-      onClose();
+
+      const newUserId =
+        data.data?.userId ||
+        data.data?.user_id ||
+        data.user_id ||
+        data.userId ||
+        data.data?.id;
+
+      if (isAttendance && newUserId && photoBase64 && descriptor) {
+        try {
+          const photoRes = await adminFaceApi.enrolPhoto(newUserId, {
+            photo: photoBase64,
+            descriptors: [descriptor],
+            consentAttested: true,
+          });
+          const successNotice =
+            photoRes?.data?.templateUpdated === false
+              ? "Photo saved. The existing live-capture face template was kept."
+              : "Photo saved and face template updated.";
+          onCreated(successNotice);
+          onClose();
+        } catch (photoErr: unknown) {
+          const backendMsg = photoErr instanceof Error ? photoErr.message : "Photo could not be saved";
+          onCreated(
+            `User created, but the photo could not be saved: ${backendMsg}. You can retry from Enrol Face.`
+          );
+          onClose();
+        }
+      } else {
+        onCreated();
+        onClose();
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -213,6 +306,70 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
                 ))}
               </div>
             </div>
+
+            {/* Attendance Photo & Consent — only shown when Attendance module is selected */}
+            {isAttendance && (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                    Verification Photo <span className="text-rose-500">*</span>
+                  </label>
+                  <p className="text-[11px] text-slate-500 mb-2">
+                    Frontal face photo used for attendance verification. Single face required.
+                  </p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="user"
+                    onChange={handlePhotoChange}
+                    className="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#004aad]/10 file:text-[#004aad] hover:file:bg-[#004aad]/20 cursor-pointer"
+                    required
+                  />
+                </div>
+
+                {photoChecking && (
+                  <div className="flex items-center gap-2 text-xs text-[#004aad] py-1">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Analyzing face in photo…</span>
+                  </div>
+                )}
+
+                {photoError && (
+                  <div className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg p-2.5">
+                    {photoError}
+                  </div>
+                )}
+
+                {photoValid && photoPreview && (
+                  <div className="flex items-center gap-3 pt-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photoPreview}
+                      alt="Photo preview"
+                      className="w-14 h-14 object-cover rounded-xl border border-slate-300 shadow-sm"
+                    />
+                    <div className="text-xs text-emerald-700 font-medium flex items-center gap-1.5">
+                      <CheckSquare className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                      <span>Face verified successfully</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-2 border-t border-slate-200">
+                  <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={consentAttested}
+                      onChange={(e) => setConsentAttested(e.target.checked)}
+                      className="mt-0.5 rounded border-slate-300 text-[#004aad] focus:ring-[#004aad]"
+                    />
+                    <span className="text-xs text-slate-700 font-medium leading-relaxed">
+                      I confirm the employee has given written consent for their face photo to be used for attendance
+                    </span>
+                  </label>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Footer */}
@@ -226,7 +383,7 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
             </button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || (isAttendance && (!photoValid || !consentAttested || photoChecking))}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#004aad] hover:bg-[#0056cc] disabled:opacity-60 text-white transition-all shadow-md shadow-[#004aad]/20"
             >
               {submitting ? (
@@ -263,6 +420,7 @@ export default function UserMasterPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [enrollingUser, setEnrollingUser] = useState<PortalUserPublic | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -353,6 +511,27 @@ export default function UserMasterPage() {
             onClick={() => setError(null)}
             className="text-rose-400 hover:text-rose-600 flex-shrink-0"
             aria-label="Dismiss error"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Notice / Warning banner */}
+      {notice && (
+        <div
+          className={`mb-4 flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm border ${
+            notice.includes("could not be saved")
+              ? "bg-amber-50 border-amber-200 text-amber-800"
+              : "bg-emerald-50 border-emerald-200 text-emerald-800"
+          }`}
+        >
+          <span>{notice}</span>
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            className="opacity-70 hover:opacity-100 flex-shrink-0"
+            aria-label="Dismiss notice"
           >
             <X className="w-4 h-4" />
           </button>
@@ -492,7 +671,13 @@ export default function UserMasterPage() {
       )}
 
       {showModal && (
-        <CreateUserModal onClose={() => setShowModal(false)} onCreated={fetchUsers} />
+        <CreateUserModal
+          onClose={() => setShowModal(false)}
+          onCreated={(noticeMsg) => {
+            if (noticeMsg) setNotice(noticeMsg);
+            void fetchUsers();
+          }}
+        />
       )}
 
       {enrollingUser && (

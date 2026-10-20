@@ -4,6 +4,8 @@
  * GET    — 🔒 Admin JWT. Proxies → GET    /api/user-master/:id
  * PUT    — 🔒 Admin JWT. Proxies → PUT    /api/user-master/:id
  * DELETE — 🔒 Admin JWT. Proxies → DELETE /api/user-master/:id
+ *
+ * Falls back to local Prisma DB ONLY when backend is unreachable (502/503/504).
  */
 
 import type { NextRequest } from "next/server";
@@ -20,7 +22,8 @@ export async function GET(request: NextRequest, ctx: Ctx) {
     authorization: request.headers.get("authorization"),
   });
 
-  if (result.ok) {
+  const isUnreachable = result.status >= 502 && result.status <= 504;
+  if (!isUnreachable) {
     return Response.json(result.data, { status: result.status });
   }
 
@@ -40,7 +43,7 @@ export async function GET(request: NextRequest, ctx: Ctx) {
         createdAt: user.createdAt.toISOString(),
       },
     });
-  } catch (err) {
+  } catch {
     return Response.json({ success: false, message: "Database query failed" }, { status: 500 });
   }
 }
@@ -61,7 +64,8 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
     body,
   });
 
-  if (result.ok) {
+  const isUnreachable = result.status >= 502 && result.status <= 504;
+  if (!isUnreachable) {
     return Response.json(result.data, { status: result.status });
   }
 
@@ -111,7 +115,8 @@ export async function DELETE(request: NextRequest, ctx: Ctx) {
     authorization: request.headers.get("authorization"),
   });
 
-  if (result.ok) {
+  const isUnreachable = result.status >= 502 && result.status <= 504;
+  if (!isUnreachable) {
     return Response.json(result.data, { status: result.status });
   }
 

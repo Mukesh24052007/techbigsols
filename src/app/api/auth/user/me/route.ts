@@ -9,15 +9,9 @@ import type { NextRequest } from "next/server";
 import { backendFetch } from "@/lib/api/backend";
 import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import { MODULE_KEYS, type ModulePermissions } from "@/types";
 
 const COOKIE_NAME = "tbs_user_token";
-const RAW_USER_SECRET =
-  process.env.USER_JWT_SECRET ||
-  process.env.JWT_SECRET ||
-  "tbs-user-secret-key-2026";
-const USER_SECRET = new TextEncoder().encode(RAW_USER_SECRET);
-
-import { MODULE_KEYS, type ModulePermissions } from "@/types";
 
 export async function GET(request: NextRequest) {
   const token = request.cookies.get(COOKIE_NAME)?.value;
@@ -26,6 +20,14 @@ export async function GET(request: NextRequest) {
     return Response.json(
       { success: false, message: "Not authenticated." },
       { status: 401 }
+    );
+  }
+
+  const userJwtSecret = process.env.USER_JWT_SECRET;
+  if (!userJwtSecret || userJwtSecret.trim() === "") {
+    return Response.json(
+      { success: false, message: "Server is misconfigured: USER_JWT_SECRET is not set" },
+      { status: 500 }
     );
   }
 
@@ -77,30 +79,41 @@ export async function GET(request: NextRequest) {
   }
 
   // Fallback: verify local JWT
+  let payload: Record<string, unknown>;
   try {
-    const { payload } = await jwtVerify(token, USER_SECRET, {
+    const verified = await jwtVerify(token, new TextEncoder().encode(userJwtSecret), {
       issuer: "tbs-portal",
       audience: "tbs-portal-users",
     });
-
-    const userId = (payload.userId as string) || (payload.sub as string);
-    const dbUser = await prisma.portalUser.findUnique({
-      where: { id: userId },
-    });
-
-    return Response.json({
-      success: true,
-      user: {
-        userId,
-        email: dbUser?.email || payload.email,
-        name: dbUser?.fullname || payload.name,
-        permissions: payload.permissions,
-      },
-    }, { status: 200 });
+    payload = verified.payload as Record<string, unknown>;
   } catch {
     return Response.json(
       { success: false, message: "Invalid or expired session." },
       { status: 401 }
     );
   }
+
+  const userId = (payload.userId as string) || (payload.sub as string);
+  let dbUser = null;
+  try {
+    dbUser = await prisma.portalUser.findUnique({
+      where: { id: userId },
+    });
+  } catch (err) {
+    console.warn("[me] Local Prisma store unavailable:", err instanceof Error ? err.message : "DB error");
+    return Response.json(
+      { success: false, message: "Not authenticated." },
+      { status: 401 }
+    );
+  }
+
+  return Response.json({
+    success: true,
+    user: {
+      userId,
+      email: dbUser?.email || (payload.email as string),
+      name: dbUser?.fullname || (payload.name as string),
+      permissions: payload.permissions,
+    },
+  }, { status: 200 });
 }

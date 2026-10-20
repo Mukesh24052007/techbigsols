@@ -13,16 +13,40 @@ import { apiClient } from "@/lib/axios";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface OfficeConfig {
-  id: string;
+  id: string | number;
   name: string;
   lat: number;
   lng: number;
   radius_m: number;
+  accuracy_max_m?: number;
   shift_start: string;
   shift_end: string;
   grace_minutes: number;
   heartbeat_seconds: number;
-  max_gps_accuracy_m?: number;
+  outside_tolerance_minutes?: number;
+  short_outing_allowance_minutes?: number;
+  reverify_count?: number;
+  employeeCount?: number;
+}
+
+export interface AdminOffice extends OfficeConfig {
+  id: number | string;
+  employeeCount?: number;
+}
+
+export interface AdminEmployeeProfile {
+  userId: string;
+  fullname: string;
+  email?: string;
+  department?: string | null;
+  designation?: string | null;
+  office?: { id: number | string; name: string } | null;
+  faceEnrolled: boolean;
+  hasPhoto: boolean;
+  enrolSource?: "PHOTO" | "LIVE" | string | null;
+  consentGiven: boolean;
+  consentAt?: string | null;
+  faceEnrolledAt?: string | null;
 }
 
 export interface AttendanceStatusResponse {
@@ -30,6 +54,8 @@ export interface AttendanceStatusResponse {
   consented: boolean;
   faceEnrolled: boolean;
   office?: OfficeConfig;
+  reverifyRequired?: boolean;
+  reverifyPending?: boolean;
   todayRecord?: {
     id: string;
     checkInTime: string;
@@ -37,6 +63,7 @@ export interface AttendanceStatusResponse {
     status: "PRESENT" | "LATE" | "ABSENT" | "ON_LEAVE";
     presenceState?: "INSIDE" | "OUTSIDE";
     reverifyPending?: boolean;
+    reverifyRequired?: boolean;
     workedMinutes?: number;
   } | null;
   message?: string;
@@ -56,9 +83,17 @@ export interface CheckInPayload {
   lat: number;
   lng: number;
   accuracy: number;
+  fixTimestamp?: number;
 }
 
 export interface HeartbeatPayload {
+  lat: number;
+  lng: number;
+  accuracy: number;
+  fixTimestamp?: number;
+}
+
+export interface CheckOutPayload {
   lat: number;
   lng: number;
   accuracy: number;
@@ -67,7 +102,8 @@ export interface HeartbeatPayload {
 export interface HeartbeatResponse {
   success: boolean;
   presenceState: "INSIDE" | "OUTSIDE";
-  reverifyPending: boolean;
+  reverifyPending?: boolean;
+  reverifyRequired?: boolean;
   message?: string;
 }
 
@@ -150,12 +186,16 @@ export const employeeAttendanceApi = {
         faceEnrolled?: boolean;
         consentGiven?: boolean;
         consented?: boolean;
+        reverifyRequired?: boolean;
+        reverifyPending?: boolean;
         todayRecord?: AttendanceStatusResponse["todayRecord"];
       };
       office?: OfficeConfig;
       faceEnrolled?: boolean;
       consentGiven?: boolean;
       consented?: boolean;
+      reverifyRequired?: boolean;
+      reverifyPending?: boolean;
       todayRecord?: AttendanceStatusResponse["todayRecord"];
       message?: string;
     }>("me/status");
@@ -165,6 +205,8 @@ export const employeeAttendanceApi = {
       success: raw.success ?? true,
       consented: Boolean(payload.consentGiven ?? payload.consented),
       faceEnrolled: Boolean(payload.faceEnrolled),
+      reverifyRequired: Boolean(payload.reverifyRequired ?? payload.todayRecord?.reverifyRequired),
+      reverifyPending: Boolean(payload.reverifyPending ?? payload.todayRecord?.reverifyPending),
       office: payload.office,
       todayRecord: payload.todayRecord,
       message: raw.message,
@@ -183,6 +225,7 @@ export const employeeAttendanceApi = {
     lat?: number;
     lng?: number;
     accuracy?: number;
+    fixTimestamp?: number;
   }): Promise<ChallengeResponse> {
     const raw = await proxyFetch<{
       success: boolean;
@@ -199,9 +242,10 @@ export const employeeAttendanceApi = {
       method: "POST",
       body: {
         purpose: params?.purpose ?? "checkin",
-        lat: params?.lat ?? 12.9716,
-        lng: params?.lng ?? 77.5946,
-        accuracy: params?.accuracy ?? 10,
+        lat: params?.lat,
+        lng: params?.lng,
+        accuracy: params?.accuracy,
+        fixTimestamp: params?.fixTimestamp,
       },
     });
 
@@ -236,10 +280,14 @@ export const employeeAttendanceApi = {
     });
   },
 
-  async checkOut(payload: HeartbeatPayload): Promise<{ success: boolean; message?: string }> {
+  async checkOut(payload: CheckOutPayload): Promise<{ success: boolean; message?: string }> {
     return proxyFetch("check-out", {
       method: "POST",
-      body: payload,
+      body: {
+        lat: payload.lat,
+        lng: payload.lng,
+        accuracy: payload.accuracy,
+      },
     });
   },
 
@@ -303,6 +351,194 @@ export const adminFaceApi = {
         throw new Error(errorData?.message || "Failed to remove face.");
       }
       throw new Error("Network error connecting to backend.");
+    }
+  },
+
+  async enrolPhoto(
+    userId: string,
+    payload: {
+      photo: string;
+      descriptors: number[][];
+      consentAttested: boolean;
+    }
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    data?: {
+      userId?: string;
+      enrolledAt?: string;
+      enrolSource?: string;
+      hasPhoto?: boolean;
+      templateUpdated?: boolean;
+    };
+  }> {
+    try {
+      const res = await apiClient.post<{
+        success: boolean;
+        message?: string;
+        data?: {
+          userId?: string;
+          enrolledAt?: string;
+          enrolSource?: string;
+          hasPhoto?: boolean;
+          templateUpdated?: boolean;
+        };
+      }>(`/api/attendance/admin/employees/${userId}/photo`, payload);
+      return res.data;
+    } catch (err: unknown) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "response" in err &&
+        err.response &&
+        typeof err.response === "object" &&
+        "data" in err.response
+      ) {
+        const errorData = (err.response as { data?: { message?: string } }).data;
+        throw new Error(errorData?.message || "Failed to save photo.");
+      }
+      throw new Error("Network error connecting to backend.");
+    }
+  },
+
+  async getPhotoBlob(userId: string): Promise<Blob> {
+    try {
+      const res = await apiClient.get(`/api/attendance/admin/employees/${userId}/photo`, {
+        responseType: "blob",
+      });
+      return res.data as Blob;
+    } catch (err: unknown) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "response" in err &&
+        err.response &&
+        typeof err.response === "object" &&
+        "data" in err.response
+      ) {
+        const errorData = (err.response as { data?: { message?: string } }).data;
+        throw new Error(errorData?.message || "Photo not found.");
+      }
+      throw new Error("Failed to load photo.");
+    }
+  },
+
+  async getEmployees(): Promise<{ employees: AdminEmployeeProfile[] }> {
+    try {
+      const res = await apiClient.get<{ success: boolean; data: { employees: AdminEmployeeProfile[] } }>(
+        "/api/attendance/admin/employees"
+      );
+      return res.data.data;
+    } catch (err: unknown) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "response" in err &&
+        err.response &&
+        typeof err.response === "object" &&
+        "data" in err.response
+      ) {
+        const errorData = (err.response as { data?: { message?: string } }).data;
+        throw new Error(errorData?.message || "Failed to fetch employees.");
+      }
+      throw new Error("Network error connecting to backend.");
+    }
+  },
+};
+
+// ── Admin Office Settings API ────────────────────────────────────────────────
+
+export const adminOfficeApi = {
+  async getOffices(): Promise<{ offices: AdminOffice[] }> {
+    try {
+      const res = await apiClient.get<{ success: boolean; data: { offices: AdminOffice[] } }>(
+        "/api/attendance/admin/offices"
+      );
+      return res.data.data;
+    } catch (err: unknown) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "response" in err &&
+        err.response &&
+        typeof err.response === "object" &&
+        "data" in err.response
+      ) {
+        const errorData = (err.response as { data?: { message?: string } }).data;
+        throw new Error(errorData?.message || "Failed to load offices.");
+      }
+      throw new Error("Network error connecting to backend.");
+    }
+  },
+
+  async createOffice(payload: Partial<AdminOffice>): Promise<{ office: AdminOffice; message?: string }> {
+    try {
+      const res = await apiClient.post<{ success: boolean; message?: string; data: { office: AdminOffice } }>(
+        "/api/attendance/admin/offices",
+        payload
+      );
+      return { office: res.data.data.office, message: res.data.message };
+    } catch (err: unknown) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "response" in err &&
+        err.response &&
+        typeof err.response === "object" &&
+        "data" in err.response
+      ) {
+        const errorData = (err.response as { data?: { message?: string } }).data;
+        throw new Error(errorData?.message || "Failed to create office.");
+      }
+      throw new Error("Network error creating office.");
+    }
+  },
+
+  async updateOffice(
+    id: number | string,
+    payload: Partial<AdminOffice>
+  ): Promise<{ office: AdminOffice; message?: string }> {
+    try {
+      const res = await apiClient.put<{ success: boolean; message?: string; data: { office: AdminOffice } }>(
+        `/api/attendance/admin/offices/${id}`,
+        payload
+      );
+      return { office: res.data.data.office, message: res.data.message };
+    } catch (err: unknown) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "response" in err &&
+        err.response &&
+        typeof err.response === "object" &&
+        "data" in err.response
+      ) {
+        const errorData = (err.response as { data?: { message?: string } }).data;
+        throw new Error(errorData?.message || "Failed to update office.");
+      }
+      throw new Error("Network error updating office.");
+    }
+  },
+
+  async deleteOffice(id: number | string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const res = await apiClient.delete<{ success: boolean; message?: string }>(
+        `/api/attendance/admin/offices/${id}`
+      );
+      return res.data;
+    } catch (err: unknown) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "response" in err &&
+        err.response &&
+        typeof err.response === "object" &&
+        "data" in err.response
+      ) {
+        const errorData = (err.response as { data?: { message?: string } }).data;
+        throw new Error(errorData?.message || "Failed to delete office.");
+      }
+      throw new Error("Network error deleting office.");
     }
   },
 };

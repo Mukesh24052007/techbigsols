@@ -4,8 +4,8 @@
  * 🔒 Admin JWT. Proxies → GET /api/user-master/modules
  *
  * Returns the full module checkbox list from the backend.
- * Falls back to the locally defined MODULE_KEYS if the backend
- * is unavailable, so the admin UI always has something to render.
+ * Falls back to the locally defined MODULE_KEYS ONLY if the backend
+ * is unreachable (502/503/504).
  */
 
 import type { NextRequest } from "next/server";
@@ -18,12 +18,12 @@ export async function GET(request: NextRequest) {
     authorization: request.headers.get("authorization"),
   });
 
-  // If backend responded successfully, forward it as-is
-  if (result.ok) {
+  const isUnreachable = result.status >= 502 && result.status <= 504;
+  if (!isUnreachable) {
     return Response.json(result.data, { status: result.status });
   }
 
-  // Fallback: build the list from local constants so the UI never breaks
+  // Fallback: build the list from local constants only when unreachable
   const modules = MODULE_KEYS.map((key) => ({ key, label: MODULE_LABELS[key] }));
   return Response.json({ success: true, data: modules });
 }
