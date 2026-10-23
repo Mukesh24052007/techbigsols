@@ -165,7 +165,18 @@ export function AdminFaceEnrolmentModal({
       }
     } catch (err: unknown) {
       stopCamera();
-      const msg = err instanceof Error ? err.message : "Camera access denied or failed to initialize.";
+      let msg = "Camera access denied or failed to initialize.";
+      if (err instanceof Error) {
+        if (err.name === "NotAllowedError" || err.message.toLowerCase().includes("permission")) {
+          msg = "Camera permission was denied. Please allow camera access in your browser's site settings (click the tune/shield icon in the address bar) and ensure Camera access is enabled in Windows Settings > Privacy & security > Camera.";
+        } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+          msg = "No webcam or camera device was found on your system. You can also enrol by uploading a photo using 'Replace photo'.";
+        } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
+          msg = "Camera is currently in use by another application (e.g. Teams, Zoom, or another browser window). Please close it and try again.";
+        } else {
+          msg = err.message;
+        }
+      }
       setErrorMsg(msg);
     }
   };

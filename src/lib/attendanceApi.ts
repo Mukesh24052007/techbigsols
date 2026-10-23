@@ -4,11 +4,12 @@
  * Employee calls go through Next.js proxy (/api/attendance-proxy) which forwards
  * the HTTP-only tbs_user_token cookie to the Express backend.
  *
- * Admin face-enrolment calls go directly to the external backend via the shared
- * apiClient in src/lib/axios.ts with the admin Bearer token.
+ * Admin face-enrolment and office configuration calls go through the Next.js admin proxy
+ * (/api/admin-attendance-proxy) which validates the admin Bearer token and provides
+ * seamless fallback to local Prisma DB if the external backend is unavailable.
  */
 
-import { apiClient } from "@/lib/axios";
+import { TOKEN_KEY } from "@/lib/axios";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -130,7 +131,7 @@ export interface HistoryResponse {
   message?: string;
 }
 
-// ── Helper for proxy fetch ───────────────────────────────────────────────────
+// ── Helper for proxy fetch (Employee Attendance) ──────────────────────────────
 
 async function proxyFetch<T>(
   path: string,
@@ -304,6 +305,56 @@ export const employeeAttendanceApi = {
   },
 };
 
+// ── Helper for admin proxy fetch ─────────────────────────────────────────────
+
+async function adminProxyFetch<T>(
+  path: string,
+  options: { method?: "GET" | "POST" | "PUT" | "DELETE"; body?: unknown } = {}
+): Promise<T> {
+  const { method = "GET", body } = options;
+  const token = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`/api/admin-attendance-proxy/${path}`, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    throw new Error("Network connection error. Please check your connection.");
+  }
+
+  let data: Record<string, unknown> = {};
+  try {
+    data = (await res.json()) as Record<string, unknown>;
+  } catch {
+    // Malformed or non-JSON response
+  }
+
+  if (res.status === 401) {
+    if (typeof window !== "undefined") {
+      window.location.href = "/admin/login";
+    }
+    throw new Error((data.message as string) || "Session expired. Please log in.");
+  }
+
+  if (!res.ok) {
+    const errorMsg =
+      (data.message as string) ||
+      `Request failed with status ${res.status}.`;
+    throw new Error(errorMsg);
+  }
+
+  return data as T;
+}
+
 // ── Admin Face Enrolment API ─────────────────────────────────────────────────
 
 export const adminFaceApi = {
@@ -311,47 +362,19 @@ export const adminFaceApi = {
     userId: string,
     descriptors: number[][]
   ): Promise<{ success: boolean; message?: string }> {
-    try {
-      const res = await apiClient.post(`/api/attendance/admin/employees/${userId}/face`, {
-        descriptors,
-      });
-      return res.data;
-    } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === "object" &&
-        "response" in err &&
-        err.response &&
-        typeof err.response === "object" &&
-        "data" in err.response
-      ) {
-        const errorData = (err.response as { data?: { message?: string } }).data;
-        throw new Error(errorData?.message || "Failed to enrol face.");
-      }
-      throw new Error("Network error connecting to backend.");
-    }
+    return adminProxyFetch<{ success: boolean; message?: string }>(
+      `employees/${userId}/face`,
+      { method: "POST", body: { descriptors } }
+    );
   },
 
   async deleteFace(
     userId: string
   ): Promise<{ success: boolean; message?: string }> {
-    try {
-      const res = await apiClient.delete(`/api/attendance/admin/employees/${userId}/face`);
-      return res.data;
-    } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === "object" &&
-        "response" in err &&
-        err.response &&
-        typeof err.response === "object" &&
-        "data" in err.response
-      ) {
-        const errorData = (err.response as { data?: { message?: string } }).data;
-        throw new Error(errorData?.message || "Failed to remove face.");
-      }
-      throw new Error("Network error connecting to backend.");
-    }
+    return adminProxyFetch<{ success: boolean; message?: string }>(
+      `employees/${userId}/face`,
+      { method: "DELETE" }
+    );
   },
 
   async enrolPhoto(
@@ -372,77 +395,38 @@ export const adminFaceApi = {
       templateUpdated?: boolean;
     };
   }> {
-    try {
-      const res = await apiClient.post<{
-        success: boolean;
-        message?: string;
-        data?: {
-          userId?: string;
-          enrolledAt?: string;
-          enrolSource?: string;
-          hasPhoto?: boolean;
-          templateUpdated?: boolean;
-        };
-      }>(`/api/attendance/admin/employees/${userId}/photo`, payload);
-      return res.data;
-    } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === "object" &&
-        "response" in err &&
-        err.response &&
-        typeof err.response === "object" &&
-        "data" in err.response
-      ) {
-        const errorData = (err.response as { data?: { message?: string } }).data;
-        throw new Error(errorData?.message || "Failed to save photo.");
-      }
-      throw new Error("Network error connecting to backend.");
-    }
+    return adminProxyFetch<{
+      success: boolean;
+      message?: string;
+      data?: {
+        userId?: string;
+        enrolledAt?: string;
+        enrolSource?: string;
+        hasPhoto?: boolean;
+        templateUpdated?: boolean;
+      };
+    }>(`employees/${userId}/photo`, { method: "POST", body: payload });
   },
 
   async getPhotoBlob(userId: string): Promise<Blob> {
-    try {
-      const res = await apiClient.get(`/api/attendance/admin/employees/${userId}/photo`, {
-        responseType: "blob",
-      });
-      return res.data as Blob;
-    } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === "object" &&
-        "response" in err &&
-        err.response &&
-        typeof err.response === "object" &&
-        "data" in err.response
-      ) {
-        const errorData = (err.response as { data?: { message?: string } }).data;
-        throw new Error(errorData?.message || "Photo not found.");
-      }
-      throw new Error("Failed to load photo.");
+    const token = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const res = await fetch(`/api/admin-attendance-proxy/employees/${userId}/photo`, {
+      headers,
+    });
+    if (!res.ok) {
+      throw new Error("Photo not found.");
     }
+    return await res.blob();
   },
 
   async getEmployees(): Promise<{ employees: AdminEmployeeProfile[] }> {
-    try {
-      const res = await apiClient.get<{ success: boolean; data: { employees: AdminEmployeeProfile[] } }>(
-        "/api/attendance/admin/employees"
-      );
-      return res.data.data;
-    } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === "object" &&
-        "response" in err &&
-        err.response &&
-        typeof err.response === "object" &&
-        "data" in err.response
-      ) {
-        const errorData = (err.response as { data?: { message?: string } }).data;
-        throw new Error(errorData?.message || "Failed to fetch employees.");
-      }
-      throw new Error("Network error connecting to backend.");
-    }
+    const res = await adminProxyFetch<{ success: boolean; data: { employees: AdminEmployeeProfile[] } }>(
+      "employees"
+    );
+    return res.data;
   },
 };
 
@@ -450,95 +434,35 @@ export const adminFaceApi = {
 
 export const adminOfficeApi = {
   async getOffices(): Promise<{ offices: AdminOffice[] }> {
-    try {
-      const res = await apiClient.get<{ success: boolean; data: { offices: AdminOffice[] } }>(
-        "/api/attendance/admin/offices"
-      );
-      return res.data.data;
-    } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === "object" &&
-        "response" in err &&
-        err.response &&
-        typeof err.response === "object" &&
-        "data" in err.response
-      ) {
-        const errorData = (err.response as { data?: { message?: string } }).data;
-        throw new Error(errorData?.message || "Failed to load offices.");
-      }
-      throw new Error("Network error connecting to backend.");
-    }
+    const res = await adminProxyFetch<{ success: boolean; data: { offices: AdminOffice[] } }>(
+      "offices"
+    );
+    return res.data;
   },
 
   async createOffice(payload: Partial<AdminOffice>): Promise<{ office: AdminOffice; message?: string }> {
-    try {
-      const res = await apiClient.post<{ success: boolean; message?: string; data: { office: AdminOffice } }>(
-        "/api/attendance/admin/offices",
-        payload
-      );
-      return { office: res.data.data.office, message: res.data.message };
-    } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === "object" &&
-        "response" in err &&
-        err.response &&
-        typeof err.response === "object" &&
-        "data" in err.response
-      ) {
-        const errorData = (err.response as { data?: { message?: string } }).data;
-        throw new Error(errorData?.message || "Failed to create office.");
-      }
-      throw new Error("Network error creating office.");
-    }
+    const res = await adminProxyFetch<{ success: boolean; message?: string; data: { office: AdminOffice } }>(
+      "offices",
+      { method: "POST", body: payload }
+    );
+    return { office: res.data.office, message: res.message };
   },
 
   async updateOffice(
     id: number | string,
     payload: Partial<AdminOffice>
   ): Promise<{ office: AdminOffice; message?: string }> {
-    try {
-      const res = await apiClient.put<{ success: boolean; message?: string; data: { office: AdminOffice } }>(
-        `/api/attendance/admin/offices/${id}`,
-        payload
-      );
-      return { office: res.data.data.office, message: res.data.message };
-    } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === "object" &&
-        "response" in err &&
-        err.response &&
-        typeof err.response === "object" &&
-        "data" in err.response
-      ) {
-        const errorData = (err.response as { data?: { message?: string } }).data;
-        throw new Error(errorData?.message || "Failed to update office.");
-      }
-      throw new Error("Network error updating office.");
-    }
+    const res = await adminProxyFetch<{ success: boolean; message?: string; data: { office: AdminOffice } }>(
+      `offices/${id}`,
+      { method: "PUT", body: payload }
+    );
+    return { office: res.data.office, message: res.message };
   },
 
   async deleteOffice(id: number | string): Promise<{ success: boolean; message?: string }> {
-    try {
-      const res = await apiClient.delete<{ success: boolean; message?: string }>(
-        `/api/attendance/admin/offices/${id}`
-      );
-      return res.data;
-    } catch (err: unknown) {
-      if (
-        err &&
-        typeof err === "object" &&
-        "response" in err &&
-        err.response &&
-        typeof err.response === "object" &&
-        "data" in err.response
-      ) {
-        const errorData = (err.response as { data?: { message?: string } }).data;
-        throw new Error(errorData?.message || "Failed to delete office.");
-      }
-      throw new Error("Network error deleting office.");
-    }
+    return adminProxyFetch<{ success: boolean; message?: string }>(
+      `offices/${id}`,
+      { method: "DELETE" }
+    );
   },
 };

@@ -5,25 +5,38 @@
  * PUT    — 🔒 Admin JWT. Proxies → PUT    /api/user-master/:id
  * DELETE — 🔒 Admin JWT. Proxies → DELETE /api/user-master/:id
  *
- * Falls back to local Prisma DB ONLY when backend is unreachable (502/503/504).
+ * Falls back to local Prisma DB when backend is unreachable (502/503/504)
+ * or rejects auth (401/403, e.g. dev token not recognized by Express).
  */
 
 import type { NextRequest } from "next/server";
 import { backendFetch } from "@/lib/api/backend";
 import { prisma } from "@/lib/prisma";
+import { verifyAdminToken } from "@/lib/api/admin-auth";
 
 type Ctx = { params: Promise<{ id: string }> };
 
+/** Returns true if the backend response means we should fall back to local DB */
+function shouldFallback(status: number): boolean {
+  return (status >= 502 && status <= 504) || status === 401 || status === 403;
+}
+
 export async function GET(request: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params;
+  const authorization = request.headers.get("authorization");
+
+  // Verify admin token locally first
+  const auth = await verifyAdminToken(authorization);
+  if (!auth.ok) {
+    return auth.response;
+  }
 
   const result = await backendFetch(`/api/user-master/${id}`, {
     method: "GET",
-    authorization: request.headers.get("authorization"),
+    authorization,
   });
 
-  const isUnreachable = result.status >= 502 && result.status <= 504;
-  if (!isUnreachable) {
+  if (result.ok || !shouldFallback(result.status)) {
     return Response.json(result.data, { status: result.status });
   }
 
@@ -50,6 +63,13 @@ export async function GET(request: NextRequest, ctx: Ctx) {
 
 export async function PUT(request: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params;
+  const authorization = request.headers.get("authorization");
+
+  // Verify admin token locally first
+  const auth = await verifyAdminToken(authorization);
+  if (!auth.ok) {
+    return auth.response;
+  }
 
   let body: Record<string, unknown> = {};
   try {
@@ -60,12 +80,11 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
 
   const result = await backendFetch(`/api/user-master/${id}`, {
     method: "PUT",
-    authorization: request.headers.get("authorization"),
+    authorization,
     body,
   });
 
-  const isUnreachable = result.status >= 502 && result.status <= 504;
-  if (!isUnreachable) {
+  if (result.ok || !shouldFallback(result.status)) {
     return Response.json(result.data, { status: result.status });
   }
 
@@ -109,14 +128,20 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
 
 export async function DELETE(request: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params;
+  const authorization = request.headers.get("authorization");
+
+  // Verify admin token locally first
+  const auth = await verifyAdminToken(authorization);
+  if (!auth.ok) {
+    return auth.response;
+  }
 
   const result = await backendFetch(`/api/user-master/${id}`, {
     method: "DELETE",
-    authorization: request.headers.get("authorization"),
+    authorization,
   });
 
-  const isUnreachable = result.status >= 502 && result.status <= 504;
-  if (!isUnreachable) {
+  if (result.ok || !shouldFallback(result.status)) {
     return Response.json(result.data, { status: result.status });
   }
 

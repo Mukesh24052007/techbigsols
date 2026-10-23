@@ -420,7 +420,18 @@ export function EmployeeAttendanceModule() {
       }
     } catch (err: unknown) {
       stopCamera();
-      const msg = err instanceof Error ? err.message : "Camera access denied or models failed to load.";
+      let msg = "Camera access denied or models failed to load.";
+      if (err instanceof Error) {
+        if (err.name === "NotAllowedError" || err.message.toLowerCase().includes("permission")) {
+          msg = "Camera permission was denied. Please allow camera access in your browser settings (address bar icon) and check Windows Camera privacy settings.";
+        } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+          msg = "No webcam or camera device was found on your system.";
+        } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
+          msg = "Camera is currently in use by another application (e.g. Teams, Zoom, or another tab). Please close it and try again.";
+        } else {
+          msg = err.message;
+        }
+      }
       setErrorBanner(msg);
     }
   };
