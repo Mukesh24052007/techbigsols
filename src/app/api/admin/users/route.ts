@@ -130,35 +130,79 @@ export async function POST(request: NextRequest) {
 
   // Fallback to local Prisma database (backend unreachable or auth rejected)
   try {
-    const allUsers = await prisma.portalUser.findMany({ select: { id: true } });
-    const user_id = generateUserId(allUsers.map((u) => u.id));
-
     const fullname = String(body.fullname ?? body.name ?? "").trim();
     const email = String(body.email ?? "").trim().toLowerCase();
     const password = String(body.password ?? "password123");
     const moduleAccessArr = Array.isArray(body.moduleAccess) ? body.moduleAccess : ["Attendance"];
-    const passwordHash = await bcrypt.hash(password, 10);
 
-    const newUser = await prisma.portalUser.create({
-      data: {
-        id: user_id,
-        fullname,
-        email,
-        passwordHash,
-        moduleAccess: JSON.stringify(moduleAccessArr),
-        isActive: true,
-      },
+    if (!fullname || !email) {
+      return Response.json(
+        { success: false, message: "Full name and email are required." },
+        { status: 400 }
+      );
+    }
+
+    // Check if email already exists in portal users
+    const existingUser = await prisma.portalUser.findUnique({
+      where: { email },
     });
 
-    // Also create or link corresponding Employee record
-    await prisma.employee.create({
-      data: {
-        id: user_id,
-        userId: user_id,
-        name: fullname,
-        email,
-        department: "General",
-      },
+    if (existingUser) {
+      return Response.json(
+        {
+          success: false,
+          message: `Email "${email}" is already in use by ${existingUser.fullname} (${existingUser.id}). You can activate or edit this user from the list.`,
+        },
+        { status: 409 }
+      );
+    }
+
+    // Check existing employee by email
+    const existingEmployee = await prisma.employee.findUnique({
+      where: { email },
+    });
+
+    // Generate safe unique ID considering both tables
+    const allUsers = await prisma.portalUser.findMany({ select: { id: true } });
+    const allEmps = await prisma.employee.findMany({ select: { id: true } });
+    const existingIds = [...allUsers.map((u) => u.id), ...allEmps.map((e) => e.id)];
+    const user_id = generateUserId(existingIds);
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const newUser = await prisma.$transaction(async (tx) => {
+      const user = await tx.portalUser.create({
+        data: {
+          id: user_id,
+          fullname,
+          email,
+          passwordHash,
+          moduleAccess: JSON.stringify(moduleAccessArr),
+          isActive: true,
+        },
+      });
+
+      if (existingEmployee) {
+        await tx.employee.update({
+          where: { id: existingEmployee.id },
+          data: {
+            userId: user_id,
+            name: fullname,
+          },
+        });
+      } else {
+        await tx.employee.create({
+          data: {
+            id: user_id,
+            userId: user_id,
+            name: fullname,
+            email,
+            department: "General",
+          },
+        });
+      }
+
+      return user;
     });
 
     return Response.json({
@@ -173,7 +217,21 @@ export async function POST(request: NextRequest) {
       },
     }, { status: 201 });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Failed to create user in local store.";
-    return Response.json({ success: false, message: msg }, { status: 500 });
+    console.error("[POST /api/admin/users] Error:", err);
+    if (err && typeof err === "object" && "code" in err) {
+      const code = (err as { code: string }).code;
+      if (code === "P2002") {
+        return Response.json(
+          { success: false, message: "A user or employee with this email already exists." },
+          { status: 409 }
+        );
+      }
+    }
+    const rawMsg = err instanceof Error ? err.message : "";
+    const cleanMsg = rawMsg.includes("Unique constraint")
+      ? "A record with this email already exists."
+      : "Failed to create user. Please check the details and try again.";
+
+    return Response.json({ success: false, message: cleanMsg }, { status: 500 });
   }
 }

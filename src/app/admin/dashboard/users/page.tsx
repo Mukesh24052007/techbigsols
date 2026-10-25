@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 import { TOKEN_KEY } from "@/lib/axios";
 import { MODULE_KEYS, MODULE_LABELS, type ModuleKey, type PortalUserPublic, type ModulePermissions } from "@/types";
-import { UserPlus, Trash2, ShieldCheck, ShieldOff, RefreshCw, X, Eye, EyeOff, CheckSquare, Square, ScanFace } from "lucide-react";
+import { UserPlus, Trash2, ShieldCheck, ShieldOff, RefreshCw, X, Eye, EyeOff, CheckSquare, Square, ScanFace, Pencil, AlertCircle } from "lucide-react";
 import dynamic from "next/dynamic";
 
 import { adminFaceApi } from "@/lib/attendanceApi";
@@ -210,8 +210,9 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
           {/* Scrollable body */}
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
             {error && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-600 rounded-xl px-4 py-3 text-sm">
-                {error}
+              <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl px-4 py-3 text-sm flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-rose-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 leading-relaxed">{error}</div>
               </div>
             )}
 
@@ -409,6 +410,223 @@ function CreateUserModal({ onClose, onCreated }: CreateUserModalProps) {
   );
 }
 
+// ── Edit User Modal ──────────────────────────────────────────────────────
+
+interface EditUserModalProps {
+  user: PortalUserPublic;
+  onClose: () => void;
+  onUpdated: (noticeMsg?: string) => void;
+}
+
+function EditUserModal({ user, onClose, onUpdated }: EditUserModalProps) {
+  const [name, setName] = useState(user.fullname);
+  const [email, setEmail] = useState(user.email);
+  const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [permissions, setPermissions] = useState<ModulePermissions>(() => {
+    const existing = new Set(user.moduleAccess ?? []);
+    return Object.fromEntries(
+      MODULE_KEYS.map((k) => [k, existing.has(BACKEND_MODULE_LABELS[k])])
+    ) as ModulePermissions;
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  const toggle = (key: ModuleKey) =>
+    setPermissions((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const selectAll = () =>
+    setPermissions(Object.fromEntries(MODULE_KEYS.map((k) => [k, true])) as ModulePermissions);
+
+  const clearAll = () =>
+    setPermissions(Object.fromEntries(MODULE_KEYS.map((k) => [k, false])) as ModulePermissions);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!name.trim() || !email.trim()) {
+      setError("Name and email are required.");
+      return;
+    }
+    if (password && password.length < 6) {
+      setError("Password must be at least 6 characters if you want to reset it.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const payload: Record<string, unknown> = {
+        fullname: name.trim(),
+        email: email.trim(),
+        moduleAccess: MODULE_KEYS.filter((k) => permissions[k]).map((k) => BACKEND_MODULE_LABELS[k]),
+      };
+      if (password.trim()) {
+        payload.password = password.trim();
+      }
+
+      const res = await fetch(`/api/admin/users/${user.user_id}`, {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message ?? "Failed to update user.");
+      }
+
+      onUpdated(`User ${name.trim()} (${user.user_id}) updated successfully.`);
+      onClose();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-800">Edit User</h2>
+            <p className="text-xs font-mono text-slate-400 mt-0.5">{user.user_id}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Body wrapped in form */}
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+            {error && (
+              <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl px-4 py-3 text-sm flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-rose-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 leading-relaxed">{error}</div>
+              </div>
+            )}
+
+            {/* Name */}
+            <div>
+              <label htmlFor="edit-name" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                Full Name
+              </label>
+              <input
+                id="edit-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#004aad]/30 focus:border-[#004aad] transition-all"
+              />
+            </div>
+
+            {/* Email */}
+            <div>
+              <label htmlFor="edit-email" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                Email
+              </label>
+              <input
+                id="edit-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#004aad]/30 focus:border-[#004aad] transition-all"
+              />
+            </div>
+
+            {/* Password (Optional reset) */}
+            <div>
+              <label htmlFor="edit-password" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                New Password <span className="text-slate-400 font-normal lowercase">(leave blank to keep unchanged)</span>
+              </label>
+              <div className="relative">
+                <input
+                  id="edit-password"
+                  type={showPass ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter new password to reset"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 pr-10 text-sm text-slate-800 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#004aad]/30 focus:border-[#004aad] transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass((p) => !p)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  aria-label={showPass ? "Hide password" : "Show password"}
+                >
+                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Module Access */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Module Access
+                </span>
+                <div className="flex gap-2">
+                  <button type="button" onClick={selectAll} className="text-xs text-[#004aad] hover:underline">
+                    Select all
+                  </button>
+                  <span className="text-slate-300">|</span>
+                  <button type="button" onClick={clearAll} className="text-xs text-slate-400 hover:underline">
+                    Clear all
+                  </button>
+                </div>
+              </div>
+              <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
+                {MODULE_KEYS.map((key) => (
+                  <div
+                    key={key}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => toggle(key)}
+                    onKeyDown={(e) => (e.key === " " || e.key === "Enter") && toggle(key)}
+                    className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition-colors select-none"
+                  >
+                    {permissions[key] ? (
+                      <CheckSquare className="w-5 h-5 text-[#004aad] flex-shrink-0" />
+                    ) : (
+                      <Square className="w-5 h-5 text-slate-300 flex-shrink-0" />
+                    )}
+                    <span className="text-sm text-slate-700">{MODULE_LABELS[key]}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3 flex-shrink-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#004aad] hover:bg-[#0056cc] disabled:opacity-60 text-white transition-all shadow-md shadow-[#004aad]/20"
+            >
+              {submitting ? "Saving…" : "Save Changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ────────────────────────────────────────────────────────────
 
 export default function UserMasterPage() {
@@ -416,6 +634,7 @@ export default function UserMasterPage() {
   const [users, setUsers] = useState<PortalUserPublic[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<PortalUserPublic | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [enrollingUser, setEnrollingUser] = useState<PortalUserPublic | null>(null);
@@ -561,7 +780,7 @@ export default function UserMasterPage() {
                 <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Created</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Face ID</th>
                 <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                <th className="px-5 py-3.5" />
+                <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -647,21 +866,32 @@ export default function UserMasterPage() {
                   </td>
                   {/* Actions */}
                   <td className="px-5 py-4 text-right">
-                    <button
-                      onClick={() => void deleteUser(u.user_id)}
-                      disabled={deletingId === u.user_id}
-                      className="p-2 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all disabled:opacity-50"
-                      aria-label={`Delete ${u.fullname}`}
-                    >
-                      {deletingId === u.user_id ? (
-                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                        </svg>
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
-                    </button>
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => setEditingUser(u)}
+                        className="p-2 rounded-lg text-slate-400 hover:text-[#004aad] hover:bg-[#004aad]/10 transition-all"
+                        aria-label={`Edit ${u.fullname}`}
+                        title="Edit User"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => void deleteUser(u.user_id)}
+                        disabled={deletingId === u.user_id}
+                        className="p-2 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all disabled:opacity-50"
+                        aria-label={`Delete ${u.fullname}`}
+                        title="Delete User"
+                      >
+                        {deletingId === u.user_id ? (
+                          <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                          </svg>
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -674,6 +904,17 @@ export default function UserMasterPage() {
         <CreateUserModal
           onClose={() => setShowModal(false)}
           onCreated={(noticeMsg) => {
+            if (noticeMsg) setNotice(noticeMsg);
+            void fetchUsers();
+          }}
+        />
+      )}
+
+      {editingUser && (
+        <EditUserModal
+          user={editingUser}
+          onClose={() => setEditingUser(null)}
+          onUpdated={(noticeMsg) => {
             if (noticeMsg) setNotice(noticeMsg);
             void fetchUsers();
           }}

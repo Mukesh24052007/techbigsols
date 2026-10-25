@@ -138,6 +138,14 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // ── /portal root redirect to personal dashboard ───────────────────────────
+  if (pathname === "/portal" || pathname === "/portal/") {
+    const userId = (payload?.userId as string | undefined) ?? (payload?.sub as string | undefined);
+    if (userId) {
+      return NextResponse.redirect(new URL(`/portal/${userId}`, request.url));
+    }
+  }
+
   // ── /portal/[userId] routes — let the page component handle ownership ─────
   // Matches /portal/tbusr001, /portal/tbusr002, etc.
   if (/^\/portal\/tbusr\w+/.test(pathname)) {
@@ -149,12 +157,15 @@ export async function proxy(request: NextRequest) {
   if (moduleMatch) {
     const key = moduleMatch[1] as ModuleKey;
     if (MODULE_KEYS.includes(key)) {
-      const permissions = payload?.permissions as Record<string, boolean> | undefined;
-      if (!permissions?.[key]) {
-        // Redirect to user's personal dashboard
-        const userId = payload?.userId as string | undefined;
-        const fallback = userId ? `/portal/${userId}` : "/portal";
-        return NextResponse.redirect(new URL(fallback, request.url));
+      // Attendance is the core employee module and accessible to all portal users
+      if (key !== "attendance") {
+        const permissions = payload?.permissions as Record<string, boolean> | undefined;
+        // Only reject if permissions were explicitly declared in the JWT and this module is disabled
+        if (permissions && permissions[key] !== true) {
+          const userId = (payload?.userId as string | undefined) ?? (payload?.sub as string | undefined);
+          const fallback = userId ? `/portal/${userId}` : "/portal";
+          return NextResponse.redirect(new URL(fallback, request.url));
+        }
       }
     }
   }

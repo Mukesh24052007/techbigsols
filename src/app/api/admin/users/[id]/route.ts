@@ -13,6 +13,7 @@ import type { NextRequest } from "next/server";
 import { backendFetch } from "@/lib/api/backend";
 import { prisma } from "@/lib/prisma";
 import { verifyAdminToken } from "@/lib/api/admin-auth";
+import bcrypt from "bcryptjs";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -90,8 +91,27 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
 
   try {
     const dataToUpdate: Record<string, unknown> = {};
-    if (body.fullname !== undefined) dataToUpdate.fullname = String(body.fullname);
-    if (body.email !== undefined) dataToUpdate.email = String(body.email);
+    if (body.fullname !== undefined) dataToUpdate.fullname = String(body.fullname).trim();
+    if (body.email !== undefined) {
+      const cleanEmail = String(body.email).trim().toLowerCase();
+      // Check if another user has this email
+      const existingUser = await prisma.portalUser.findFirst({
+        where: { email: cleanEmail, NOT: { id } },
+      });
+      if (existingUser) {
+        return Response.json(
+          {
+            success: false,
+            message: `Email "${cleanEmail}" is already used by ${existingUser.fullname} (${existingUser.id}).`,
+          },
+          { status: 409 }
+        );
+      }
+      dataToUpdate.email = cleanEmail;
+    }
+    if (body.password !== undefined && String(body.password).trim().length >= 6) {
+      dataToUpdate.passwordHash = await bcrypt.hash(String(body.password).trim(), 10);
+    }
     if (body.is_active !== undefined) dataToUpdate.isActive = Boolean(body.is_active);
     if (body.moduleAccess !== undefined) dataToUpdate.moduleAccess = JSON.stringify(body.moduleAccess);
 
@@ -102,10 +122,10 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
 
     if (body.fullname !== undefined || body.email !== undefined) {
       await prisma.employee.updateMany({
-        where: { userId: id },
+        where: { OR: [{ userId: id }, { id }] },
         data: {
-          name: updated.fullname,
-          email: updated.email,
+          ...(dataToUpdate.fullname ? { name: String(dataToUpdate.fullname) } : {}),
+          ...(dataToUpdate.email ? { email: String(dataToUpdate.email) } : {}),
         },
       });
     }
@@ -121,7 +141,11 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
         createdAt: updated.createdAt.toISOString(),
       },
     });
-  } catch {
+  } catch (err: unknown) {
+    console.error("[PUT /api/admin/users/[id]] Error:", err);
+    if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "P2002") {
+      return Response.json({ success: false, message: "A user with this email already exists." }, { status: 409 });
+    }
     return Response.json({ success: false, message: "Failed to update user." }, { status: 500 });
   }
 }
@@ -146,10 +170,29 @@ export async function DELETE(request: NextRequest, ctx: Ctx) {
   }
 
   try {
-    await prisma.portalUser.delete({ where: { id } });
-    await prisma.employee.deleteMany({ where: { id } });
+    const linkedEmp = await prisma.employee.findFirst({
+      where: { OR: [{ userId: id }, { id }] },
+      select: { id: true },
+    });
+
+    await prisma.$transaction(async (tx) => {
+      if (linkedEmp) {
+        await tx.faceTemplate.deleteMany({ where: { employeeId: linkedEmp.id } });
+        await tx.attendanceAttempt.deleteMany({ where: { employeeId: linkedEmp.id } });
+        await tx.reVerificationPrompt.deleteMany({ where: { record: { employeeId: linkedEmp.id } } });
+        await tx.presenceInterval.deleteMany({ where: { record: { employeeId: linkedEmp.id } } });
+        await tx.attendanceRecord.deleteMany({ where: { employeeId: linkedEmp.id } });
+        await tx.leave.deleteMany({ where: { employeeId: linkedEmp.id } });
+        await tx.regularization.deleteMany({ where: { employeeId: linkedEmp.id } });
+        await tx.consentRecord.deleteMany({ where: { employeeId: linkedEmp.id } });
+        await tx.employee.deleteMany({ where: { id: linkedEmp.id } });
+      }
+      await tx.portalUser.deleteMany({ where: { id } });
+    });
+
     return Response.json({ success: true, message: "User deleted successfully." });
-  } catch {
+  } catch (err: unknown) {
+    console.error("[DELETE /api/admin/users/[id]] Error:", err);
     return Response.json({ success: false, message: "Failed to delete user." }, { status: 500 });
   }
 }

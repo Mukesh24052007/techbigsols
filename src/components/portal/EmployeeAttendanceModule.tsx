@@ -152,12 +152,13 @@ export function EmployeeAttendanceModule() {
         setDistanceMeters(dist);
 
         const radius = Number(status.office.radius_m) || 150;
-        const maxAcc = Number(status.office.accuracy_max_m) || 50;
+        const configuredMaxAcc = Number(status.office.accuracy_max_m) || 200;
+        const maxAcc = Math.max(configuredMaxAcc, dist <= radius ? 250 : 100);
 
-        if (accuracy > maxAcc) {
-          setLocationRejection("GPS signal is too weak. Move near a window or an open area and try again.");
-        } else if (dist > radius) {
+        if (dist > radius) {
           setLocationRejection("Location verification failed: You are outside the authorized office premises.");
+        } else if (accuracy > maxAcc) {
+          setLocationRejection("GPS signal is too weak. Move near a window or an open area and try again.");
         } else {
           setLocationRejection(null);
         }
@@ -197,11 +198,12 @@ export function EmployeeAttendanceModule() {
           setDistanceMeters(dist);
 
           const radius = Number(status.office.radius_m) || 150;
-          const maxAcc = Number(status.office.accuracy_max_m) || 50;
-          if (accuracy > maxAcc) {
-            setLocationRejection("GPS signal is too weak. Move near a window or an open area and try again.");
-          } else if (dist > radius) {
+          const configuredMaxAcc = Number(status.office.accuracy_max_m) || 200;
+          const maxAcc = Math.max(configuredMaxAcc, dist <= radius ? 250 : 100);
+          if (dist > radius) {
             setLocationRejection("Location verification failed: You are outside the authorized office premises.");
+          } else if (accuracy > maxAcc) {
+            setLocationRejection("GPS signal is too weak. Move near a window or an open area and try again.");
           } else {
             setLocationRejection(null);
           }
@@ -353,16 +355,17 @@ export function EmployeeAttendanceModule() {
       setDistanceMeters(dist);
 
       const radius = Number(status.office.radius_m) || 150;
-      const maxAcc = Number(status.office.accuracy_max_m) || 50;
+      const configuredMaxAcc = Number(status.office.accuracy_max_m) || 200;
+      const maxAcc = Math.max(configuredMaxAcc, dist <= radius ? 250 : 100);
 
-      if (accuracy > maxAcc) {
-        const msg = "GPS signal is too weak. Move near a window or an open area and try again.";
+      if (dist > radius) {
+        const msg = "Location verification failed: You are outside the authorized office premises.";
         setLocationRejection(msg);
         setErrorBanner(msg);
         return;
       }
-      if (dist > radius) {
-        const msg = "Location verification failed: You are outside the authorized office premises.";
+      if (accuracy > maxAcc) {
+        const msg = "GPS signal is too weak. Move near a window or an open area and try again.";
         setLocationRejection(msg);
         setErrorBanner(msg);
         return;
@@ -392,8 +395,7 @@ export function EmployeeAttendanceModule() {
       else if (ch.action === "SMILE") actionDesc = "Smile at the camera";
       setLivenessStatusText(actionDesc);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Location verification failed.";
-      setLocationRejection(msg);
+      const msg = err instanceof Error ? err.message : "Failed to initiate verification.";
       setErrorBanner(msg);
       return;
     }
@@ -669,8 +671,9 @@ export function EmployeeAttendanceModule() {
   // ── Render Helpers ──────────────────────────────────────────────────────────
 
   const radiusLimit = Number(status?.office?.radius_m) || 150;
-  const maxAccLimit = Number(status?.office?.accuracy_max_m) || 50;
   const isInsideRadius = distanceMeters !== null && distanceMeters <= radiusLimit;
+  const configuredMaxAcc = Number(status?.office?.accuracy_max_m) || 200;
+  const maxAccLimit = Math.max(configuredMaxAcc, isInsideRadius ? 250 : 100);
   const isGpsAccurate = gpsLocation ? gpsLocation.accuracy <= maxAccLimit : false;
   const canCheckIn = isInsideRadius && isGpsAccurate && !locationRejection;
 

@@ -184,6 +184,12 @@ export function AdminFaceEnrolmentModal({
   const captureSample = async () => {
     if (!videoRef.current || submitting) return;
 
+    // If 5 samples already collected, retry submission
+    if (samples.length >= DESIRED_SAMPLES) {
+      await submitEnrolment(samples);
+      return;
+    }
+
     setErrorMsg(null);
     try {
       const detection = await detectSingleFace(videoRef.current);
@@ -215,7 +221,10 @@ export function AdminFaceEnrolmentModal({
       setSuccessMsg(res.message || "Face enrolled successfully!");
       setEnrolSource("Live");
       stopCamera();
-      if (onSuccess) onSuccess();
+      setTimeout(() => {
+        if (onSuccess) onSuccess();
+        onClose();
+      }, 1000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to save face enrolment.";
       setErrorMsg(msg);
@@ -451,7 +460,9 @@ export function AdminFaceEnrolmentModal({
               {/* Angle Prompt */}
               <div className="absolute top-3 inset-x-4 flex justify-center">
                 <span className="bg-black/80 backdrop-blur-md text-white text-[11px] px-3.5 py-1.5 rounded-full border border-white/10 font-semibold shadow">
-                  Sample {samples.length + 1} of {DESIRED_SAMPLES}: {STEP_HINTS[currentStep] || "Hold steady"}
+                  {samples.length >= DESIRED_SAMPLES
+                    ? `All ${DESIRED_SAMPLES} samples captured: Ready to enrol`
+                    : `Sample ${samples.length + 1} of ${DESIRED_SAMPLES}: ${STEP_HINTS[currentStep] || "Hold steady"}`}
                 </span>
               </div>
             </div>
@@ -489,6 +500,11 @@ export function AdminFaceEnrolmentModal({
                   <>
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                     Enrolling…
+                  </>
+                ) : samples.length >= DESIRED_SAMPLES ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Submit Enrolment ({DESIRED_SAMPLES}/{DESIRED_SAMPLES})
                   </>
                 ) : (
                   <>

@@ -16,6 +16,8 @@ export default function PortalRoot() {
     if (isLoading) return;
     if (user?.userId) {
       router.replace(`/portal/${user.userId}`);
+    } else {
+      router.replace("/user/login");
     }
   }, [user, isLoading, router]);
 
