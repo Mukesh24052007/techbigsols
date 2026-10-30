@@ -12,12 +12,15 @@ const ALLOWED_ENDPOINTS: Record<string, Set<string>> = {
     "heartbeat",
     "check-out",
     "regularization",
+    "qr/check-in",
+    "qr/check-out",
   ]),
 };
 
 const COOKIE_NAME = "tbs_user_token";
 const TIMEOUT_MS = 15_000;
 const MONTH_REGEX = /^\d{4}-(0[1-9]|1[0-2])$/;
+const DATE_REGEX = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 
 async function handleProxy(
   request: NextRequest,
@@ -70,10 +73,13 @@ async function handleProxy(
     );
   }
 
-  // Prepare query string: only forward validated `month` for GET me/history
+  // Prepare query string: only forward validated query params for GET me/history
   let queryString = "";
   if (method === "GET" && subPath === "me/history") {
-    const monthParam = request.nextUrl.searchParams.get("month");
+    const searchParams = request.nextUrl.searchParams;
+    const validatedParams = new URLSearchParams();
+
+    const monthParam = searchParams.get("month");
     if (monthParam) {
       if (!MONTH_REGEX.test(monthParam)) {
         return Response.json(
@@ -81,7 +87,44 @@ async function handleProxy(
           { status: 400 }
         );
       }
-      queryString = `?month=${encodeURIComponent(monthParam)}`;
+      validatedParams.set("month", monthParam);
+    }
+
+    const startDateParam = searchParams.get("startDate");
+    if (startDateParam) {
+      if (!DATE_REGEX.test(startDateParam)) {
+        return Response.json(
+          { success: false, message: "Invalid startDate format. Expected YYYY-MM-DD." },
+          { status: 400 }
+        );
+      }
+      validatedParams.set("startDate", startDateParam);
+    }
+
+    const endDateParam = searchParams.get("endDate");
+    if (endDateParam) {
+      if (!DATE_REGEX.test(endDateParam)) {
+        return Response.json(
+          { success: false, message: "Invalid endDate format. Expected YYYY-MM-DD." },
+          { status: 400 }
+        );
+      }
+      validatedParams.set("endDate", endDateParam);
+    }
+
+    const limitParam = searchParams.get("limit");
+    if (limitParam && /^\d{1,3}$/.test(limitParam)) {
+      validatedParams.set("limit", limitParam);
+    }
+
+    const offsetParam = searchParams.get("offset");
+    if (offsetParam && /^\d{1,5}$/.test(offsetParam)) {
+      validatedParams.set("offset", offsetParam);
+    }
+
+    const qs = validatedParams.toString();
+    if (qs) {
+      queryString = `?${qs}`;
     }
   }
 
