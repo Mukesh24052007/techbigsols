@@ -12,6 +12,9 @@ function getPageTitle(pathname: string): string {
   if (pathname.match(/\/products\/[^/]+\/edit$/)) return "Edit Product";
   if (pathname.endsWith("/products")) return "Products";
   if (pathname.endsWith("/users")) return "User Master";
+  if (pathname.endsWith("/attendance/qr")) return "QR Code Display";
+  if (pathname.endsWith("/attendance/daily-logs")) return "Daily Attendance Logs";
+  if (pathname.endsWith("/attendance/audit-logs")) return "Attendance Audit Logs";
   if (pathname.endsWith("/attendance/settings")) return "Office Settings";
   if (pathname.endsWith("/attendance/reports")) return "Reports";
   if (pathname.includes("/attendance")) return "Attendance";

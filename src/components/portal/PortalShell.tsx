@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useUserAuth } from "@/context/UserAuthContext";
 import { PortalSidebar } from "./PortalSidebar";
 import { PortalTopbar } from "./PortalTopbar";
+import { MandatoryPasswordChangeModal } from "./MandatoryPasswordChangeModal";
 import { MODULE_LABELS, MODULE_KEYS, type ModuleKey } from "@/types";
 
 function getPageTitle(pathname: string): string {
@@ -58,9 +59,15 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
       <PortalSidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <PortalTopbar title={getPageTitle(pathname)} onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          {children}
-        </main>
+        {user?.mustChangePassword ? (
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 flex items-center justify-center">
+            <MandatoryPasswordChangeModal />
+          </div>
+        ) : (
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+            {children}
+          </main>
+        )}
       </div>
     </div>
   );

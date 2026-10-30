@@ -82,11 +82,18 @@ export async function POST(request: NextRequest) {
     ])
   ) as ModulePermissions;
 
+  const mustChangePassword = Boolean(
+    rawUser.mustChangePassword ??
+    rawUser.must_change_password ??
+    payload.mustChangePassword
+  );
+
   const normalizedUser = {
     userId: String(rawUser.userId ?? rawUser.user_id ?? rawUser.id ?? ""),
     email: String(rawUser.email ?? ""),
     name: String(rawUser.name ?? rawUser.fullname ?? rawUser.fullName ?? "Portal User"),
     permissions,
+    mustChangePassword,
   };
 
   const response = Response.json({ success: true, user: normalizedUser }, { status: 200 });
