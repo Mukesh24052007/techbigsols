@@ -6,7 +6,7 @@ import { useAdminAuth } from "@/context/AdminAuthContext";
 import { Eye, EyeOff, LogIn, ShieldCheck, AlertCircle } from "lucide-react";
 
 export default function AdminLoginPage() {
-  const { login, isAuthenticated } = useAdminAuth();
+  const { login, isAuthenticated, isLoading } = useAdminAuth();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -17,8 +17,10 @@ export default function AdminLoginPage() {
 
   // If already logged in, skip to dashboard
   useEffect(() => {
-    if (isAuthenticated) router.replace("/admin/dashboard");
-  }, [isAuthenticated, router]);
+    if (!isLoading && isAuthenticated) {
+      router.replace("/admin/dashboard");
+    }
+  }, [isAuthenticated, isLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

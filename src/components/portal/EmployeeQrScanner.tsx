@@ -7,6 +7,8 @@ import {
   CameraOff,
   ShieldAlert,
   RefreshCw,
+  Keyboard,
+  ArrowRight,
 } from "lucide-react";
 
 interface EmployeeQrScannerProps {
@@ -23,6 +25,10 @@ export function EmployeeQrScanner({
   const [isScanning, setIsScanning] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [hasScanned, setHasScanned] = useState(false);
+
+  // Manual token input state as secondary fallback for devices without camera
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [manualToken, setManualToken] = useState("");
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerId = "qr-reader-container";
@@ -102,6 +108,15 @@ export function EmployeeQrScanner({
     [isSubmitting, hasScanned, onScanSuccess, stopScanning]
   );
 
+  const handleManualSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = manualToken.trim();
+    if (!token || isSubmitting) return;
+    const extracted = parseScannedText(token);
+    if (!extracted) return;
+    onScanSuccess(extracted);
+  };
+
   const startScanning = async () => {
     setCameraError(null);
     setHasScanned(false);
@@ -113,8 +128,13 @@ export function EmployeeQrScanner({
       !navigator.mediaDevices ||
       !navigator.mediaDevices.getUserMedia
     ) {
-      if (typeof window !== "undefined" && window.location.protocol !== "https:" && window.location.hostname !== "localhost") {
-        setCameraError("Camera access requires a secure HTTPS connection.");
+      if (
+        typeof window !== "undefined" &&
+        window.location.protocol !== "https:" &&
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1"
+      ) {
+        setCameraError("Camera access requires a secure HTTPS or localhost connection.");
       } else {
         setCameraError("Camera access is not supported on this browser or device.");
       }
@@ -158,7 +178,8 @@ export function EmployeeQrScanner({
         if (errName.includes("notallowed") || errName.includes("permission")) {
           msg = "Camera permission was denied. Please allow camera access in browser settings to scan attendance QR codes.";
         } else if (errName.includes("notfound") || errName.includes("devicesnotfound")) {
-          msg = "No compatible camera found on this device.";
+          msg = "No compatible camera found on this device. You can enter or paste the QR token manually below.";
+          setShowManualInput(true);
         } else if (errName.includes("notreadable") || errName.includes("trackstart")) {
           msg = "Camera is currently in use by another application.";
         } else if (err.message) {
@@ -215,17 +236,29 @@ export function EmployeeQrScanner({
           </div>
         </div>
 
-        {isScanning && (
+        <div className="flex items-center gap-2">
+          {isScanning && (
+            <button
+              type="button"
+              onClick={() => void stopScanning()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-800 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+              aria-label="Stop camera"
+            >
+              <CameraOff className="w-3.5 h-3.5" />
+              <span>Stop camera</span>
+            </button>
+          )}
+
           <button
             type="button"
-            onClick={() => void stopScanning()}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-800 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-            aria-label="Stop camera"
+            onClick={() => setShowManualInput(!showManualInput)}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+            title="Manual Token Input"
           >
-            <CameraOff className="w-3.5 h-3.5" />
-            <span>Stop camera</span>
+            <Keyboard className="w-3.5 h-3.5 text-slate-500" />
+            <span>{showManualInput ? "Hide Code Input" : "Enter Code"}</span>
           </button>
-        )}
+        </div>
       </div>
 
       {/* Viewfinder Body */}
@@ -238,10 +271,39 @@ export function EmployeeQrScanner({
           >
             <ShieldAlert className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="font-semibold">Camera Access Error</p>
+              <p className="font-semibold">Camera Notice</p>
               <p className="mt-0.5 text-rose-700">{cameraError}</p>
             </div>
           </div>
+        )}
+
+        {/* Manual Input Fallback */}
+        {showManualInput && (
+          <form
+            onSubmit={handleManualSubmit}
+            className="w-full max-w-sm mb-5 p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col gap-3 animate-in fade-in"
+          >
+            <label className="text-xs font-semibold text-slate-700">
+              Enter or Paste QR Token:
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={manualToken}
+                onChange={(e) => setManualToken(e.target.value)}
+                placeholder="e.g. tbs_check_in_..."
+                className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#f39200]/30"
+              />
+              <button
+                type="submit"
+                disabled={!manualToken.trim() || isSubmitting}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl disabled:opacity-50 transition-colors shadow-sm"
+              >
+                <span>Submit</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </form>
         )}
 
         {/* Viewfinder Container */}
@@ -264,7 +326,7 @@ export function EmployeeQrScanner({
                 Camera is currently idle
               </p>
               <p className="text-xs text-white/50 max-w-xs mb-5">
-                Press the button below to activate your rear camera and scan the office QR code.
+                Press the button below to activate your camera and scan the office QR code.
               </p>
               <button
                 type="button"

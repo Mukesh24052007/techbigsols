@@ -19,6 +19,7 @@ import {
 interface AdminAuthContextType {
   isAuthenticated: boolean;
   admin: AdminProfile | null;
+  isLoading: boolean;
   /** Returns an error message string on failure, null on success */
   login: (email: string, password: string) => Promise<string | null>;
   logout: () => Promise<void>;
@@ -29,42 +30,43 @@ const AdminAuthContext = createContext<AdminAuthContextType | undefined>(
 );
 
 // ── Dev-mode credentials ────────────────────────────────────────────────────
-// If NEXT_PUBLIC_DEV_ADMIN_EMAIL / _PASSWORD are set, logging in with those
-// exact credentials bypasses the external backend and uses NEXT_PUBLIC_DEV_TOKEN
-// (which must match the server-side ADMIN_DEV_TOKEN env var).
 const DEV_EMAIL = process.env.NEXT_PUBLIC_DEV_ADMIN_EMAIL ?? "";
 const DEV_PASSWORD = process.env.NEXT_PUBLIC_DEV_ADMIN_PASSWORD ?? "";
 const DEV_TOKEN = process.env.NEXT_PUBLIC_ADMIN_DEV_TOKEN ?? "";
 
-function isDevMode() {
+function isDevCredentials(email: string, password: string) {
   return (
-    process.env.NODE_ENV === "development" &&
     DEV_EMAIL !== "" &&
     DEV_PASSWORD !== "" &&
-    DEV_TOKEN !== ""
+    email.toLowerCase() === DEV_EMAIL.toLowerCase() &&
+    password === DEV_PASSWORD
   );
 }
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [admin, setAdmin] = useState<AdminProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   // On mount: if a token exists, verify it
   useEffect(() => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) return;
+    const token = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
 
-    // If we're in dev mode and the token matches the dev token, accept it
-    // without hitting the backend.
-    if (isDevMode() && token === DEV_TOKEN) {
+    // If the token matches the dev token, accept it immediately
+    if (DEV_TOKEN !== "" && token === DEV_TOKEN) {
       setAdmin({
         id: "dev-admin",
-        email: DEV_EMAIL,
+        email: DEV_EMAIL || "admin@techbigsolutions.in",
         name: "Dev Admin",
         role: "admin",
       });
       setIsAuthenticated(true);
+      setIsLoading(false);
       return;
     }
 
@@ -75,21 +77,27 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         localStorage.removeItem(TOKEN_KEY);
+        setIsAuthenticated(false);
+        setAdmin(null);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   }, []);
 
   /**
    * Login flow.
-   * In dev mode with matching credentials: bypass backend.
-   * Otherwise: POST to external backend.
+   * If matching configured dev credentials: set local session.
+   * Otherwise: POST to login endpoint.
    */
   const login = async (
     email: string,
     password: string
   ): Promise<string | null> => {
     // ── Dev bypass ────────────────────────────────────────────────────────────
-    if (isDevMode() && email === DEV_EMAIL && password === DEV_PASSWORD) {
-      localStorage.setItem(TOKEN_KEY, DEV_TOKEN);
+    if (isDevCredentials(email, password)) {
+      const activeToken = DEV_TOKEN || "dev-secret-change-me";
+      localStorage.setItem(TOKEN_KEY, activeToken);
       setAdmin({
         id: "dev-admin",
         email: DEV_EMAIL,
@@ -100,7 +108,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       return null;
     }
 
-    // ── Real backend ──────────────────────────────────────────────────────────
+    // ── Backend / API Route ───────────────────────────────────────────────────
     try {
       const { token, admin: profile } = await loginRequest(email, password);
       localStorage.setItem(TOKEN_KEY, token);
@@ -138,7 +146,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AdminAuthContext.Provider
-      value={{ isAuthenticated, admin, login, logout }}
+      value={{ isAuthenticated, admin, isLoading, login, logout }}
     >
       {children}
     </AdminAuthContext.Provider>

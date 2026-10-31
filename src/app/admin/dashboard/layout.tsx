@@ -22,21 +22,22 @@ function getPageTitle(pathname: string): string {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAdminAuth();
+  const { isAuthenticated, isLoading } = useAdminAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
+    if (isLoading) return;
     if (!isAuthenticated) {
       router.replace("/admin/login");
     } else {
       setChecked(true);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isLoading, router]);
 
-  if (!checked) {
+  if (isLoading || !checked) {
     return (
       <div className="min-h-screen bg-[#05142b] flex items-center justify-center">
         <svg className="animate-spin w-8 h-8 text-[#004aad]" fill="none" viewBox="0 0 24 24">
