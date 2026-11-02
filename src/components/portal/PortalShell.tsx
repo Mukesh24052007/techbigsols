@@ -36,8 +36,9 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
     if (moduleMatch) {
       const segment = moduleMatch[1];
       const key = segment as ModuleKey;
+      const isAllowed = key === "attendance" || user?.permissions?.[key] === true;
       // Only guard known module keys — leave /portal/tbusr* pass-through to the page itself
-      if (MODULE_KEYS.includes(key) && user?.permissions?.[key] !== true) {
+      if (MODULE_KEYS.includes(key) && !isAllowed) {
         router.replace(`/portal/${user?.userId ?? ""}`);
       }
     }

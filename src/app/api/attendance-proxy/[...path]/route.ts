@@ -76,9 +76,14 @@ async function handleLocalAttendance(
     },
   });
 
-  if (!employee && userId) {
-    const portalUser = await prisma.portalUser.findUnique({
-      where: { id: userId },
+  if (!employee && (userId || userEmail)) {
+    const portalUser = await prisma.portalUser.findFirst({
+      where: {
+        OR: [
+          ...(userId ? [{ id: userId }] : []),
+          ...(userEmail ? [{ email: userEmail }, { email: userEmail.toLowerCase() }] : []),
+        ],
+      },
     });
     if (portalUser) {
       employee = await prisma.employee.create({
@@ -532,7 +537,7 @@ async function handleProxy(
     clearTimeout(timer);
 
     // If backend returns 502/503/504 (service unreachable/gateway error), fall back to local handler
-    if (backendRes.status >= 502 && backendRes.status <= 504) {
+    if (backendRes.status === 401 || backendRes.status === 404 || (backendRes.status >= 502 && backendRes.status <= 504)) {
       return handleLocalAttendance(subPath, method, request, token, bodyData);
     }
 

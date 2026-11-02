@@ -41,6 +41,46 @@ function formatSqlDateTime(date: Date): string {
   return date.toISOString().replace("T", " ").slice(0, 19);
 }
 
+export function registerExternalQrSession(params: {
+  sessionId?: number;
+  qrToken: string;
+  action: "CHECK_IN" | "CHECK_OUT";
+  attendanceDate?: string;
+  officeId?: number;
+  expiresAt?: string;
+  validityMinutes?: number;
+  generationSeq?: number;
+}) {
+  const officeId = params.officeId ?? 1;
+  const key = `${params.action}_${officeId}`;
+  const now = Date.now();
+  let expMs = now + (params.validityMinutes || 15) * 60 * 1000;
+  if (params.expiresAt) {
+    const raw = params.expiresAt.replace(" ", "T");
+    const parsed = new Date(raw + (raw.includes("Z") ? "" : "Z")).getTime();
+    if (!isNaN(parsed) && parsed > now) {
+      expMs = parsed;
+    }
+  }
+
+  const today = params.attendanceDate || getTodayDateString();
+  const session: QrSession = {
+    sessionId: params.sessionId || qrStore.sessionCounter++,
+    qrToken: params.qrToken,
+    action: params.action,
+    attendanceDate: today,
+    officeId,
+    createdAt: now,
+    expiresAt: params.expiresAt || formatSqlDateTime(new Date(expMs)),
+    expiresAtMs: expMs,
+    secondsRemaining: Math.max(0, Math.floor((expMs - now) / 1000)),
+    generationSeq: params.generationSeq || 1,
+  };
+
+  qrStore.sessions.set(key, session);
+  return session;
+}
+
 export function getActiveQrSession(
   action: "CHECK_IN" | "CHECK_OUT",
   officeId = 1
@@ -181,4 +221,3 @@ export function validateScannedToken(
     session: matchedSession,
   };
 }
-

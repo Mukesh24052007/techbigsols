@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { generateQrSession } from "@/lib/attendance/qr-sessions";
+import { generateQrSession, registerExternalQrSession } from "@/lib/attendance/qr-sessions";
 import { backendFetch } from "@/lib/api/backend";
 import { prisma } from "@/lib/prisma";
 
@@ -33,6 +33,23 @@ export async function POST(request: NextRequest) {
       body,
     });
     if (result.ok) {
+      try {
+        const payload = result.data as Record<string, unknown>;
+        const data = (payload.data ?? payload) as Record<string, unknown>;
+        if (typeof data.qrToken === "string") {
+          registerExternalQrSession({
+            sessionId: typeof data.sessionId === "number" ? data.sessionId : undefined,
+            qrToken: data.qrToken,
+            action: (data.action as "CHECK_IN" | "CHECK_OUT") || action,
+            officeId: typeof data.officeId === "number" ? data.officeId : officeId,
+            expiresAt: typeof data.expiresAt === "string" ? data.expiresAt : undefined,
+            validityMinutes,
+            generationSeq: typeof data.generationSeq === "number" ? data.generationSeq : undefined,
+          });
+        }
+      } catch {
+        // Best effort
+      }
       return Response.json(result.data, { status: result.status });
     }
   } catch {
@@ -100,4 +117,3 @@ export async function POST(request: NextRequest) {
     },
   });
 }
-
