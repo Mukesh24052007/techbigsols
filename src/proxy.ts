@@ -150,7 +150,9 @@ export async function proxy(request: NextRequest) {
     const key = moduleMatch[1] as ModuleKey;
     if (MODULE_KEYS.includes(key)) {
       const permissions = payload?.permissions as Record<string, boolean> | undefined;
-      if (!permissions?.[key]) {
+      // Attendance is universal for all employees
+      const isAllowed = key === "attendance" || permissions?.[key] === true;
+      if (!isAllowed) {
         // Redirect to user's personal dashboard
         const userId = payload?.userId as string | undefined;
         const fallback = userId ? `/portal/${userId}` : "/portal";

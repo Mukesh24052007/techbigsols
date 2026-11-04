@@ -9,6 +9,7 @@
 import type { NextRequest } from "next/server";
 import { backendFetch } from "@/lib/api/backend";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -71,6 +72,9 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
     if (body.email !== undefined) dataToUpdate.email = String(body.email);
     if (body.is_active !== undefined) dataToUpdate.isActive = Boolean(body.is_active);
     if (body.moduleAccess !== undefined) dataToUpdate.moduleAccess = JSON.stringify(body.moduleAccess);
+    if (body.password !== undefined && typeof body.password === "string" && body.password.trim()) {
+      dataToUpdate.passwordHash = await bcrypt.hash(body.password.trim(), 10);
+    }
 
     const updated = await prisma.portalUser.update({
       where: { id },

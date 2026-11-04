@@ -12,6 +12,9 @@ function getPageTitle(pathname: string): string {
   if (pathname.match(/\/products\/[^/]+\/edit$/)) return "Edit Product";
   if (pathname.endsWith("/products")) return "Products";
   if (pathname.endsWith("/users")) return "User Master";
+  if (pathname.endsWith("/attendance/qr")) return "QR Code Display";
+  if (pathname.endsWith("/attendance/daily-logs")) return "Daily Attendance Logs";
+  if (pathname.endsWith("/attendance/audit-logs")) return "Attendance Audit Logs";
   if (pathname.endsWith("/attendance/settings")) return "Office Settings";
   if (pathname.endsWith("/attendance/reports")) return "Reports";
   if (pathname.includes("/attendance")) return "Attendance";
@@ -19,21 +22,22 @@ function getPageTitle(pathname: string): string {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAdminAuth();
+  const { isAuthenticated, isLoading } = useAdminAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
+    if (isLoading) return;
     if (!isAuthenticated) {
       router.replace("/admin/login");
     } else {
       setChecked(true);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isLoading, router]);
 
-  if (!checked) {
+  if (isLoading || !checked) {
     return (
       <div className="min-h-screen bg-[#05142b] flex items-center justify-center">
         <svg className="animate-spin w-8 h-8 text-[#004aad]" fill="none" viewBox="0 0 24 24">

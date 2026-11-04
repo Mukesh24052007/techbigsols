@@ -90,6 +90,7 @@ export interface PortalUser {
   moduleAccess: string[];
   is_active: boolean;
   createdAt: string;
+  mustChangePassword?: boolean;
   hasFaceTemplate?: boolean;
   faceTemplateCount?: number;
 }

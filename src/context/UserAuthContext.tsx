@@ -15,6 +15,7 @@ export interface PortalUserSession {
   email: string;
   name: string;
   permissions: ModulePermissions;
+  mustChangePassword?: boolean;
 }
 
 interface UserAuthContextType {
@@ -24,6 +25,8 @@ interface UserAuthContextType {
   /** Returns error message on failure, or null on success. On success also sets user state. */
   login: (email: string, password: string) => Promise<{ error: string | null; user: PortalUserSession | null }>;
   logout: () => Promise<void>;
+  /** Re-fetches /api/auth/user/me from server and updates user state. */
+  refreshSession: () => Promise<PortalUserSession | null>;
 }
 
 const UserAuthContext = createContext<UserAuthContextType | undefined>(undefined);
@@ -32,6 +35,23 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<PortalUserSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+
+  const refreshSession = async (): Promise<PortalUserSession | null> => {
+    try {
+      const res = await fetch("/api/auth/user/me", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user?.userId) {
+          const sessionUser = data.user as PortalUserSession;
+          setUser(sessionUser);
+          return sessionUser;
+        }
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
 
   // On mount: try to restore session from the HTTP-only cookie via /api/auth/user/me
   useEffect(() => {
@@ -77,7 +97,7 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <UserAuthContext.Provider
-      value={{ isAuthenticated: !!user, user, isLoading, login, logout }}
+      value={{ isAuthenticated: !!user, user, isLoading, login, logout, refreshSession }}
     >
       {children}
     </UserAuthContext.Provider>

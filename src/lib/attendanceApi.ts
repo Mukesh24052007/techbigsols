@@ -84,7 +84,8 @@ export interface AttendanceRecordItem {
 
 export interface HistoryResponse {
   success: boolean;
-  records: AttendanceRecordItem[];
+  records?: AttendanceRecordItem[];
+  data?: AttendanceRecordItem[];
   summary?: {
     present: number;
     late: number;
@@ -92,6 +93,48 @@ export interface HistoryResponse {
     onLeave: number;
   };
   message?: string;
+}
+
+export interface QrCheckInPayload {
+  qrToken: string;
+  lat?: number;
+  lng?: number;
+  accuracy?: number;
+}
+
+export interface QrCheckInResponse {
+  success: boolean;
+  message: string;
+  code?: string;
+  data?: {
+    recordId: number;
+    userId: string;
+    attendanceDate: string;
+    checkInAt: string;
+    status: string;
+  };
+}
+
+export interface QrCheckOutPayload {
+  qrToken: string;
+  lat?: number;
+  lng?: number;
+  accuracy?: number;
+}
+
+export interface QrCheckOutResponse {
+  success: boolean;
+  message: string;
+  code?: string;
+  data?: {
+    recordId: number;
+    userId: string;
+    attendanceDate: string;
+    checkInAt: string;
+    checkOutAt: string;
+    workedMinutes: number;
+    status: string;
+  };
 }
 
 // ── Helper for proxy fetch ───────────────────────────────────────────────────
@@ -243,8 +286,36 @@ export const employeeAttendanceApi = {
     });
   },
 
-  async getHistory(month?: string): Promise<HistoryResponse> {
-    const query = month ? `?month=${encodeURIComponent(month)}` : "";
+  async qrCheckIn(payload: QrCheckInPayload): Promise<QrCheckInResponse> {
+    return proxyFetch<QrCheckInResponse>("qr/check-in", {
+      method: "POST",
+      body: payload,
+    });
+  },
+
+  async qrCheckOut(payload: QrCheckOutPayload): Promise<QrCheckOutResponse> {
+    return proxyFetch<QrCheckOutResponse>("qr/check-out", {
+      method: "POST",
+      body: payload,
+    });
+  },
+
+  async getHistory(
+    params?: string | { month?: string; startDate?: string; endDate?: string; limit?: number; offset?: number }
+  ): Promise<HistoryResponse> {
+    let query = "";
+    if (typeof params === "string") {
+      query = params ? `?month=${encodeURIComponent(params)}` : "";
+    } else if (params) {
+      const sp = new URLSearchParams();
+      if (params.month) sp.set("month", params.month);
+      if (params.startDate) sp.set("startDate", params.startDate);
+      if (params.endDate) sp.set("endDate", params.endDate);
+      if (params.limit != null) sp.set("limit", String(params.limit));
+      if (params.offset != null) sp.set("offset", String(params.offset));
+      const s = sp.toString();
+      if (s) query = `?${s}`;
+    }
     return proxyFetch<HistoryResponse>(`me/history${query}`);
   },
 

@@ -3,16 +3,21 @@ import axios from "axios";
 export const TOKEN_KEY = "tbs_admin_token";
 
 /**
- * Shared Axios client for all product API calls (GET, POST, PUT, DELETE).
+ * Shared Axios client for all API calls (products, admin attendance, etc.).
  *
- * baseURL always points to the external backend (NEXT_PUBLIC_API_BASE_URL).
+ * In browser: uses relative URL ("") when connecting to Next.js routes or when
+ * NEXT_PUBLIC_API_BASE_URL points to localhost:5000 (avoiding ECONNREFUSED when
+ * external backend is not running).
  * Automatically attaches Admin JWT from localStorage on every mutating call.
  */
 
+const rawBaseUrl =
+  (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_BASE_URL) || "";
+
 const BACKEND_URL =
-  (typeof process !== "undefined" &&
-    process.env?.NEXT_PUBLIC_API_BASE_URL) ||
-  "http://localhost:5000";
+  typeof window !== "undefined" && (rawBaseUrl.includes("localhost:5000") || !rawBaseUrl)
+    ? ""
+    : rawBaseUrl || "http://localhost:5000";
 
 export const apiClient = axios.create({
   baseURL: BACKEND_URL,
